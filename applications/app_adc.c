@@ -189,6 +189,11 @@ static THD_FUNCTION(adc_thread, arg) {
 		// Read the external ADC pin voltage
 		float pwr = ADC_VOLTS(ADC_IND_EXT);
 
+		// Override pwr value, when used from LISP
+		if (adc_detached == 1 || adc_detached == 2) {
+			pwr = adc1_override;
+		}
+
 		// Read voltage and range check
 		static float read_filter = 0.0;
 		UTILS_LP_MOVING_AVG_APPROX(read_filter, pwr, FILTER_SAMPLES);
@@ -222,11 +227,6 @@ static THD_FUNCTION(adc_thread, arg) {
 			// Linear mapping between the start and end voltage
 			pwr = utils_map(pwr, config.voltage_start, config.voltage_end, 0.0, 1.0);
 			break;
-		}
-
-		// Override pwr value, when used from LISP
-		if (adc_detached == 1 || adc_detached == 2) {
-			pwr = adc1_override;
 		}
 
 		// Optionally apply a filter

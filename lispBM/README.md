@@ -611,6 +611,20 @@ Returns true when the main-function is done with all initialization.
 
 ---
 
+#### shutdown-hold
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 6.05+ |
+
+```clj
+(shutdown-hold hold)
+```
+
+Hold shutdown. When hold is true hardware shutdown will be delayed until hold is set to false again. Can be used when catching a shutdown-event if more time is needed for cleanup.
+
+---
+
 ### App Override Commands
 
 Several app-inputs can be detached from the external interfaces and overridden from lisp. This is useful to take advantage of existing throttle curves and control modes from the apps while providing a custom input source.
@@ -659,7 +673,8 @@ Detaches a peripherial from the APP ADC
 ;        - 1 ADC2
 ;        - 2 Reverse button
 ;        - 3 Cruise control button
-; val : 0.0 to 1.0 (button pressed is > 0.0)
+; value : 0.0 to 3.3 (button pressed is > 0.0)
+; Note that throttle mapping also is applied to the override value.
 ```
 
 Sets the override value
@@ -5257,7 +5272,7 @@ Returns a list where the first element is the free space on the file system and 
 
 ## Firmware Update
 
-The firmware can be updated locally and on CAN-devices. This requires that the firmware-file is pre-processed using VESC Tool with the cli-command --createFirmwareForBootloader.
+The firmware can be updated locally and on CAN-devices. This requires that the firmware-file is pre-processed using VESC Tool with the cli-command --packFirmware.
 
 ---
 
@@ -5300,6 +5315,82 @@ Write data to firmware-buffer at offset. Returns true on success or nil/timeout 
 ```
 
 Reboot and attempt to load the new firmware from the firmware-buffer using the bootloader. This function always returns true as there is no easy way to get the response from the bootloader. If the optional argument optCanId is omitted or set to -1 the command is performed locally, otherwise it is performed on the CAN-device with id optCanId.
+
+---
+
+## Lisp and Qml Upload
+
+Lisp and QML-scripts can be updated locally and on CAN-devices. This requires that the file is pre-processed using VESC Tool with the cli-command --packLisp and --packQml.
+
+---
+
+#### lbm-erase
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(lbm-erase optCanId)
+```
+
+Erase lisp-code. This is required before writing new code. Returns true on success or nil/timeout on failure. If the optional argument optCanId is omitted or set to -1 the command is performed locally, otherwise it is performed on the CAN-device with id optCanId.
+
+---
+
+#### qml-erase
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(qml-erase optCanId)
+```
+
+Erase qml-code. This is required before writing new code. Returns true on success or nil/timeout on failure. If the optional argument optCanId is omitted or set to -1 the command is performed locally, otherwise it is performed on the CAN-device with id optCanId.
+
+---
+
+#### lbm-write
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(lbm-write offset data optCanId)
+```
+
+Write data to lbm-buffer at offset. Returns true on success or nil/timeout on failure. If the optional argument optCanId is omitted or set to -1 the command is performed locally, otherwise it is performed on the CAN-device with id optCanId.
+
+---
+
+#### qml-write
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(qml-write offset data optCanId)
+```
+
+Write data to qml-buffer at offset. Returns true on success or nil/timeout on failure. If the optional argument optCanId is omitted or set to -1 the command is performed locally, otherwise it is performed on the CAN-device with id optCanId.
+
+---
+
+#### lbm-run
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(lbm-run running optCanId)
+```
+
+Run or stop the lbm-code (run if running is 1, stop otherwise). Returns true on success or nil/timeout on failure. If the optional argument optCanId is omitted or set to -1 the command is performed locally, otherwise it is performed on the CAN-device with id optCanId.
 
 ---
 
