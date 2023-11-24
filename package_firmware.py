@@ -125,7 +125,7 @@ package_dict["UBOX_SINGLE_100"] = [['ubox_single_100', default_name],
 package_dict["UBOX_SINGLE_80"] = [['ubox_single_80', default_name],
                                   ['ubox_single_80_no_limits', no_limits_name]]
 package_dict["UBOX_SINGLE_85_200"] = [['ubox_single_85_200', 'default_name.bin'],
-                                  ['ubox_single_85_200_no_limits', 'no_limits_name']]
+                                  ['ubox_single_85_200_no_limits', no_limits_name]]
 package_dict["UBOX_V2_100"] = [['ubox_v2_100', default_name],
                                ['ubox_v2_100_no_limits', no_limits_name]]
 package_dict["EDU"] = [['edu', default_name],
@@ -164,7 +164,9 @@ package_dict["MKSESC_75_200_V2"] = [['mksesc_75_200_v2', default_name],
 package_dict["MKSESC_84_100_HP"] = [['mksesc_84_100_hp', default_name],
                     ['mksesc_84_100_hp_no_limits', no_limits_name]]                    
 package_dict["MKSESC_84_200_HP"] = [['mksesc_84_200_hp', default_name],
-                    ['mksesc_84_200_hp_no_limits', no_limits_name]]   
+                    ['mksesc_84_200_hp_no_limits', no_limits_name]]
+package_dict["STR500"] = [['str500', default_name],
+                    ['str500_no_limits', no_limits_name]]
 
 # This is the firmware stub string
 res_firmwares_string = '        <file>TARGET_DESTINATION_DIRECTORY/TARGET_DESTINATION_FILENAME</file>\n'
