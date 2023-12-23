@@ -2364,13 +2364,49 @@ Get the absolute value of x.
 
 | Platforms | Firmware |
 |---|---|
-| ESC | 6.00+ |
+| ESC, Express | 6.00+ |
 
 ```clj
 (throttle-curve value accel brake mode)
 ```
 
 Apply throttle curve on value. accel (range -1 to 1) is the curve constant for acceleration (when value is greater than 0) and brake (range -1 to 1) is the curve constant for braking (when value is less than 0). mode (0, 1 or 2) is the throttle curve mode. Negative curve constants mean that the throttle will be gentler in the beginning and more aggressive with towards the end and positive curve constants mean the opposite. The modes are 0: Exponential, 1: Natural and 2: Polynomial. You can have a look at the throttle curves in VESC Tool for the PPM, ADC or VESC Remote app and experiment with the mode and curve constants to see a plot of the response.
+
+---
+
+#### rand
+
+| Platforms | Firmware |
+|---|---|
+| ESC, Express | 6.05+ |
+
+```clj
+(rand optSeed)
+```
+
+Generate random number in the range 0 to (rand-max). Example:
+
+```clj
+; Generate integer in the range 0 to 99
+(mod (rand) 100)
+
+; Generate number in the range 0.0 to 1.0
+(/ (to-float (rand)) (rand-max))
+```
+
+---
+
+#### rand-max
+
+| Platforms | Firmware |
+|---|---|
+| ESC, Express | 6.05+ |
+
+```clj
+(rand-max)
+```
+
+Returns the maximum number that rand can return.
 
 ---
 
@@ -3861,7 +3897,7 @@ Sort list lst using comparison function f. Example:
 > ("a" "is" "string" "this")
 ```
 
-Note: Sort is quite slow the way it is implemented now. If sorting becomes a bottleneck in your application you can open an issue on github and hopefully someone will look into that and make a fast implementation.
+Note: Sort is quite slow the way it is implemented now. If sorting becomes a bottleneck in your application you can open an issue on github and hopefully someone will look into that and make a fast implementation. **Update**: Since firmware 6.05 sort is a built-in function that uses the merge sort algorithm. That makes it fast and it works well on large lists.
 
 ---
 
