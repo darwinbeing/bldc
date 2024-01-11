@@ -46,7 +46,7 @@
 #define FAIL 0
 #define SUCCESS 1
 
-extension_fptr extensions[EXTENSION_STORAGE_SIZE];
+lbm_extension_t extensions[EXTENSION_STORAGE_SIZE];
 lbm_uint constants_memory[CONSTANT_MEMORY_SIZE];
 
 
@@ -223,7 +223,7 @@ LBM_EXTENSION(ext_event_sym, args, argn) {
   if (argn == 1 && lbm_is_symbol(args[0])) {
     lbm_flat_value_t v;
     if (lbm_start_flatten(&v, 1 + sizeof(lbm_uint) + 20)) {
-      f_sym(&v, args[0]);
+      f_sym(&v, lbm_dec_sym(args[0]));
       lbm_finish_flatten(&v);
       lbm_event(&v);
       res = ENC_SYM_TRUE;
@@ -274,7 +274,7 @@ LBM_EXTENSION(ext_event_array, args, argn) {
     lbm_flat_value_t v;
     if (lbm_start_flatten(&v, 100)) {
       f_cons(&v);
-      f_sym(&v,args[0]);
+      f_sym(&v,lbm_dec_sym(args[0]));
       f_lbm_array(&v, 12, (uint8_t*)hello);
       lbm_finish_flatten(&v);
       lbm_event(&v);
@@ -298,7 +298,7 @@ LBM_EXTENSION(ext_unblock, args, argn) {
     lbm_cid c = lbm_dec_as_i32(args[0]);
     lbm_flat_value_t v;
     if (lbm_start_flatten(&v, 1 + sizeof(lbm_uint))) {
-      f_sym(&v, ENC_SYM_TRUE);
+      f_sym_string(&v, "t");
       lbm_finish_flatten(&v);
       lbm_unblock_ctx(c,&v);
       res = ENC_SYM_TRUE;
@@ -313,7 +313,7 @@ LBM_EXTENSION(ext_unblock_error, args, argn) {
     lbm_cid c = lbm_dec_as_i32(args[0]);
     lbm_flat_value_t v;
     if (lbm_start_flatten(&v, 1 + sizeof(lbm_uint))) {
-      f_sym(&v, ENC_SYM_EERROR);
+      f_sym(&v, SYM_EERROR);
       lbm_finish_flatten(&v);
       lbm_unblock_ctx(c,&v);
       res = ENC_SYM_TRUE;
@@ -363,6 +363,22 @@ LBM_EXTENSION(ext_const_prg, args, argn) {
   if (!lbm_share_const_array(&v, const_prg, strlen(const_prg)+1))
     return ENC_SYM_NIL;
   return v;
+}
+
+LBM_EXTENSION(ext_inc_i, args, argn) {
+  if (argn == 1 && lbm_is_number(args[0])) {
+    lbm_int i = lbm_dec_as_i32(args[0]);
+    return lbm_enc_i(i + 1);
+  }
+  return ENC_SYM_EERROR;
+}
+
+LBM_EXTENSION(ext_load_inc_i, args, argn) {
+  (void) args;
+  (void) argn;
+
+  lbm_add_extension("ext-inc-i", ext_inc_i);
+  return ENC_SYM_TRUE;
 }
 
 int main(int argc, char **argv) {
@@ -641,6 +657,14 @@ int main(int argc, char **argv) {
   res = lbm_add_extension("check", ext_check);
   if (res)
     printf("Result check extension added.\n");
+  else {
+    printf("Error adding extension.\n");
+    return FAIL;
+  }
+
+  res = lbm_add_extension("load-inc-i", ext_load_inc_i);
+  if (res)
+    printf("extension load extension added.\n");
   else {
     printf("Error adding extension.\n");
     return FAIL;

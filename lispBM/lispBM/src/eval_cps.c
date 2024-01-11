@@ -2104,8 +2104,16 @@ static void apply_read_base(lbm_value *args, lbm_uint nargs, eval_context_t *ctx
     }
     lbm_value *sptr = get_stack_ptr(ctx, 2);
 
-    sptr[0] = chan;
-    sptr[1] = READ_DONE;
+    //sptr[0] = Restore context flag to incremental read?
+    //          TRUE -> set incremental
+    //          NIL  -> set non-incremental
+    if (ctx->flags & EVAL_CPS_CONTEXT_FLAG_INCREMENTAL_READ) {
+      sptr[0] = ENC_SYM_TRUE;
+    } else {
+      sptr[0] = ENC_SYM_NIL;
+    }
+    sptr[1] = chan;
+    stack_push(&ctx->K, READ_DONE);
 
     if (program) {
       if (incremental) {
@@ -3272,8 +3280,6 @@ static void read_finish(lbm_char_channel_t *str, eval_context_t *ctx) {
 
   */
 
-  ctx->flags &= ~EVAL_CPS_CONTEXT_FLAG_INCREMENTAL_READ;
-
   if (lbm_is_symbol(ctx->r)) {
     lbm_uint sym_val = lbm_dec_sym(ctx->r);
     if (sym_val >= TOKENIZER_SYMBOLS_START &&
@@ -3557,7 +3563,23 @@ static void cont_read_next_token(eval_context_t *ctx) {
     } else {
       int r = 0;
       if (strncmp(tokpar_sym_str,"ext-",4) == 0) {
-        r = lbm_add_extension_symbol(tokpar_sym_str, &symbol_id);
+        lbm_uint ext_id;
+        lbm_uint ext_name_len = strlen(tokpar_sym_str)+1;
+        char *ext_name = lbm_malloc(ext_name_len);
+        if (!ext_name) {
+          gc();
+          ext_name = lbm_malloc(ext_name_len);
+        }
+        if (ext_name) {
+          memcpy(ext_name, tokpar_sym_str, ext_name_len);
+          r = lbm_add_extension(ext_name, lbm_extensions_default);
+          if (!lbm_lookup_extension_id(ext_name, &ext_id)) {
+            error_ctx(ENC_SYM_FATAL_ERROR);
+          }
+          symbol_id = ext_id + EXTENSION_SYMBOLS_START;
+        } else {
+          error_ctx(ENC_SYM_MERROR);
+        }
       } else {
         if (ctx->flags & EVAL_CPS_CONTEXT_FLAG_CONST_SYMBOL_STRINGS &&
             ctx->flags & EVAL_CPS_CONTEXT_FLAG_INCREMENTAL_READ) {
@@ -3833,7 +3855,14 @@ static void cont_read_dot_terminate(eval_context_t *ctx) {
 
 static void cont_read_done(eval_context_t *ctx) {
   lbm_value stream;
-  lbm_pop(&ctx->K, &stream);
+  lbm_value restore_incremental;
+  lbm_pop_2(&ctx->K, &stream ,&restore_incremental);
+
+  if (restore_incremental == ENC_SYM_TRUE) {
+    ctx->flags |= EVAL_CPS_CONTEXT_FLAG_INCREMENTAL_READ;
+  } else {
+    ctx->flags &= ~EVAL_CPS_CONTEXT_FLAG_INCREMENTAL_READ;
+  }
 
   lbm_char_channel_t *str = lbm_dec_channel(stream);
   if (str == NULL || str->state == NULL) {
