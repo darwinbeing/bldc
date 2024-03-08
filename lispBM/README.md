@@ -1738,6 +1738,20 @@ Notice that all canget-commands rely on the status messages being active on the 
 
 ---
 
+#### can-msg-age
+
+| Platforms | Firmware |
+|---|---|
+| ESC, Express | 6.05+ |
+
+```clj
+(can-msg-age id msg)
+```
+
+Get age of can-message msg from device with can-id id. Can be used to determine how up-to-date the values are from the different messages. nil is returned if the given message has never been received from the given id.
+
+---
+
 #### canset-current
 
 | Platforms | Firmware |
@@ -2153,6 +2167,48 @@ Example:
 (def max-speed-kmh 25.0)
 (can-cmd 54 (str-from-n (/ max-speed-kmh 3.6) "(conf-set 'max-speed %.3f)"))
 ```
+
+---
+
+#### can-start
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(can-start optPinTx optPinRx)
+```
+
+Start or restart CAN-driver. The optional arguments optPinTx and optPinRx can be used to specify which pins to use as CAN TX and CAN RX. If they are omitted the default pins will be used. If the hardware does not have default CAN pins and no pins are specified an error is returned. This function can also be used while the CAN-driver is running for changing CAN-pins.
+
+---
+
+#### can-stop
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(can-stop)
+```
+
+Stop CAN-bus driver.
+
+---
+
+#### can-use-vesc
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(can-use-vesc use-vesc)
+```
+
+Enable or disable decoding of the VESC Protocol on the CAN-bus. By default it is enabled. The VESC Protocol is used for communication with VESC Tool, the VESC BMS and VESC motor controllers on the CAN-bus. Disabling the VESC Protocol is useful for using the express as a generic CAN sniffer and debugger.
 
 ---
 
@@ -2656,7 +2712,7 @@ The function (ix list ind) can be used to get an element from the list. Example:
 (uart-start baudrate optHd)
 ```
 
-Start the UART driver at baudrate on the COMM-port on the VESC. optHd is an optional argument that can be set to 'half-duplex to use half-duplex mode. In half-duplex mode only the tx-pin is used. If any app is using the UART pins it will be stopped first. Example:
+Start the UART driver at baudrate on the COMM-port. optHd is an optional argument that can be set to 'half-duplex to use half-duplex mode. In half-duplex mode only the tx-pin is used. If any app is using the UART pins it will be stopped first. Example:
 
 ```clj
 (uart-start 115200) ; Start UART at 115200 baud in full duplex mode
@@ -2665,17 +2721,50 @@ Start the UART driver at baudrate on the COMM-port on the VESC. optHd is an opti
 
 ---
 
+#### uart-start
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(uart-start uart-num rx-pin tx-pin baudrate)
+```
+
+This version of uart-start is for the Express-platform. Start the UART uart-num on the pins rx-pin and tx-pin with baudrate. Uart-num can be 0 or 1 and any pin can be used. Note that GNSS uses uart 0, so when a gnss-receiver is connected uart 1 must be used. Example:
+
+```clj
+; Start UART 1 with pin 20 for RX, pin 21 for TX and 115200 baudrate.
+(uart-start 1 20 21 115200)
+```
+
+---
+
+#### uart-stop
+
+| Platforms | Firmware |
+|---|---|
+| ESC, Express | 6.05+ |
+
+```clj
+(uart-stop)
+```
+
+Stop the UART-driver and free the resources it uses.
+
+---
+
 #### uart-write
 
 | Platforms | Firmware |
 |---|---|
-| ESC | 6.00+ |
+| ESC, Express | 6.00+ |
 
 ```clj
 (uart-write array)
 ```
 
-Write array (see [byte array](#byte-arrays) for details) to the UART. Examples:
+Write array (see [byte array](#byte-arrays) for details) to the UART. The array-argument can also be a list. Examples:
 
 ```clj
 (uart-write "Hello World!") ; Write the string hello world!
@@ -2694,13 +2783,21 @@ Write array (see [byte array](#byte-arrays) for details) to the UART. Examples:
 
 | Platforms | Firmware |
 |---|---|
-| ESC | 6.00+ |
+| ESC, Express | 6.00+ |
 
 ```clj
-(uart-read array num optOffset optStopAt)
+(uart-read array num optOffset optStopAt optTimeout)
 ```
 
-Read num bytes into array at offset optOffset. Stop reading if the character optStopAt is received. The last two arguments are optional. Note that this function returns immediately if there is nothing to be read, so it is not blocking. The return value is the number of bytes read.
+Read num bytes into array at offset optOffset. Stop reading if the character optStopAt is received or optTimeout time has passed. The last three arguments are optional. Setting optTimeout to 0 (or omitting the argument) makes this function return immediately, even when there is nothing to read. The return value is the number of bytes read. The optional arguments can also be set to nil in case not all of them are used. Example:
+
+```clj
+; Read at most 10 characters into arr and return if it takes more than
+; 0.5 seconds to receive anything.
+(def arr (bufcreate 10))
+(var res (uart-read arr 10 nil nil 0.5))
+(print (list res arr))
+```
 
 ---
 
@@ -2708,7 +2805,7 @@ Read num bytes into array at offset optOffset. Stop reading if the character opt
 
 | Platforms | Firmware |
 |---|---|
-| ESC | 6.00+ |
+| ESC, Express | 6.00+ |
 
 ```clj
 (uart-read-bytes array num offset)
@@ -2722,7 +2819,7 @@ Read num bytes into buffer at offset. This function is blocking, so it will not 
 
 | Platforms | Firmware |
 |---|---|
-| ESC | 6.00+ |
+| ESC, Express | 6.00+ |
 
 ```clj
 (uart-read-until array num offset end)
@@ -5293,12 +5390,14 @@ Returns the age of the last gnss-sample in seconds.
 | Express | 6.05+ |
 
 ```clj
-(ublox-init optRateMs)
+(ublox-init optRateMs optUartNum optPinRx optPinTx)
 ```
 
 Re-initializes the ublox gnss-module. Returns true on success and nil on failure. Nil most likely means that something is wrong with the connection.
 
 The optional argument optRateMs can be used to set the navigation rate in milliseconds. By default 500 ms us used. Not any navigation rate is possible, it depends on the ublox module in use. Common rates that can work are 100, 200, 500, 1000 and 2000 ms.
+
+The optional arguments optUartNum, optPinRx and optPinTx can be used to specify the UART peripheral and pins. optUartNum can be 0 or 1 and the pins can be any valid ESP-pins.
 
 ---
 
@@ -5819,13 +5918,26 @@ The express can use the remote peripheral to drive addressable LEDs on any pin. 
 | Express | 6.02+ |
 
 ```clj
-(rgbled-init pin num-leds)
+(rgbled-init pin num-leds optLedType)
 ```
 
-Initialize the rgbled-driver on pin for num-leds LEDs. Example:
+Initialize the rgbled-driver on pin for num-leds LEDs. The optional argument optLedType was added in firmware 6.05 and specifies the type of LEDs. If it is omitted type 0 (GRB) is used. The available types are:
+
+| Number | LED Type |
+|---|---|
+| 0 | GRB |
+| 1 | RGB |
+| 2 | GRBW |
+| 3 | RGBW |
+
+Example:
 
 ```clj
-(rgbled-init 8 1) ; This is the LED on the DevKitM-1
+; This is the LED on the DevKitM-1
+(rgbled-init 8 1)
+
+; 10 GRBW-LEDs connected to pin 20 (rx) on the VESC Express
+(rgbled-init 20 10 2)
 ```
 
 ---
@@ -5854,10 +5966,11 @@ De-initialize the rgbled-driver and release the resources it used.
 (rgbled-color led-num color)
 ```
 
-Set LED led-num to color. The color is a number in RGB888. Example:
+Set LED led-num to color. The color is a number in WRGB8888 format. When the white color is used the type must be u32 as all 32 bits are needed then. Example:
 
 ```clj
-(rgbled-color 0 0xFF0000) ; Set the first LED to red
+(rgbled-color 0 0x00FF0000u32) ; Set the first LED to red
+(rgbled-color 1 0xFF000000u32) ; Set the second LED to white
 ```
 
 ---

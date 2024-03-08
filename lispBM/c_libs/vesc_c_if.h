@@ -170,8 +170,8 @@ typedef float    lbm_float;
 
 typedef struct {
 	uint8_t *buf;
-	size_t   buf_size;
-	uint32_t buf_pos;
+	lbm_uint buf_size;
+	lbm_uint buf_pos;
 } lbm_flat_value_t;
 
 typedef struct {
@@ -290,7 +290,10 @@ typedef struct {
 
 /*
  * Function pointer struct. Always add new function pointers to the end in order to not
- * break compatibility with old binaries.
+ * break compatibility with old binaries. If a function is not available (e.g. in an
+ * old firmware) it will be a null-pointer. If you make a package that is meant to
+ * run on older firmware too you can check if the newer functions are null pointers to
+ * know if they are available.
  */
 typedef struct {
 	// LBM
@@ -594,6 +597,8 @@ typedef struct {
 	void (*foc_set_openloop_duty)(float dutyCycle, float rpm);
 	void (*foc_set_openloop_duty_phase)(float dutyCycle, float phase);
 
+	// Functions below were added in firmware 6.05
+
 	// Flat values
 	bool (*lbm_start_flatten)(lbm_flat_value_t *v, size_t buffer_size);
 	bool (*lbm_finish_flatten)(lbm_flat_value_t *v);
@@ -611,6 +616,19 @@ typedef struct {
 	// Unblock unboxed
 	bool (*lbm_unblock_ctx_unboxed)(lbm_cid cid, lbm_value unboxed);
 
+	// Time since boot in system ticks. Resolution: 100 uS.
+	// Use ts_to_age_s to get the age of a timestamp in
+	// seconds. ts_to_age_s should handle overflows.
+	systime_t (*system_time_ticks)(void);
+	void (*sleep_ticks)(systime_t ticks);
+
+	// FOC Audio
+	bool (*foc_beep)(float freq, float time, float voltage);
+	bool (*foc_play_tone)(int channel, float freq, float voltage);
+	void (*foc_stop_audio)(bool reset);
+	bool (*foc_set_audio_sample_table)(int channel, float *samples, int len);
+	const float* (*foc_get_audio_sample_table)(int channel);
+	bool (*foc_play_audio_samples)(const int8_t *samples, int num_samp, float f_samp, float voltage);
 } vesc_c_if;
 
 typedef struct {
@@ -618,6 +636,9 @@ typedef struct {
 	void *arg;
 	uint32_t base_addr;
 } lib_info;
+
+// System tick rate. Can be used to convert system ticks to time
+#define SYSTEM_TICK_RATE_HZ 10000
 
 // VESC-interface with function pointers
 #define VESC_IF		((vesc_c_if*)(0x1000F800))

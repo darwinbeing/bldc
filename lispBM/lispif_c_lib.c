@@ -932,6 +932,18 @@ lbm_value ext_load_native_lib(lbm_value *args, lbm_uint argn) {
 		// Unblock unboxed
 		cif.cif.lbm_unblock_ctx_unboxed = lbm_unblock_ctx_unboxed;
 
+		// System time
+		cif.cif.system_time_ticks = chVTGetSystemTimeX;
+		cif.cif.sleep_ticks = chThdSleep;
+
+		// FOC Audio
+		cif.cif.foc_beep = mcpwm_foc_beep;
+		cif.cif.foc_play_tone = mcpwm_foc_play_tone;
+		cif.cif.foc_stop_audio = mcpwm_foc_stop_audio;
+		cif.cif.foc_set_audio_sample_table = mcpwm_foc_set_audio_sample_table;
+		cif.cif.foc_get_audio_sample_table = mcpwm_foc_get_audio_sample_table;
+		cif.cif.foc_play_audio_samples = mcpwm_foc_play_audio_samples;
+
 		lib_init_done = true;
 	}
 
