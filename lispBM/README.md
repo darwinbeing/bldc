@@ -515,9 +515,9 @@ Same as get-imu-gyro, but derotates the result first. This means that the angula
 | ESC, Express | 6.00+ |
 
 ```clj
-(send-data dataList)
+(send-data dataList optInterface optCanId)
 ```
-Send a list of custom app data to VESC Tool. This can be read from a Qml script for example.
+Send a list of custom app data on the commands-interface of the type COMM_CUSTOM_APP_DATA. This can be read from a Qml script in VESC Tool for example or from another node on the CAN-bus.
 
 Example of sending the numbers 1, 2, 3 and 4:
 
@@ -526,6 +526,20 @@ Example of sending the numbers 1, 2, 3 and 4:
 ```
 
 *dataList* can be a list or a [byte array](#byte-arrays).
+
+The optional argument optInterface (introduced in FW 6.05) can be used to specify which interface to use and the optional argument optCanId can be used to specify which CAN-device to send the message to when using the CAN interface. The available interfaces are:
+
+| Number | Interface Type |
+|---|---|
+| 0 | The last interface data was received on (default) |
+| 1 | USB |
+| 2 | CAN (requires the argument optCanId) |
+| 3 | UART on comm-header |
+| 4 | UART builtin (depending on hardware) |
+| 5 | UART extra (depending on hardware) |
+| 6 | WiFi local (express) |
+| 7 | WiFi TCP Hub (express) |
+| 8 | BLE (express) |
 
 ---
 
@@ -5992,7 +6006,7 @@ De-initialize the rgbled-driver and release the resources it used. If data is cu
 | Express | 6.05+ |
 
 ```clj
-(rgbled-buffer num-leds optLedType)
+(rgbled-buffer num-leds optLedType optGammaCorr)
 ```
 
 Creates an LED-buffer for num-leds leds. The optional argument optLedType specifies the type of LEDs. If it is omitted type 0 (GRB) is used. The available types are:
@@ -6004,11 +6018,16 @@ Creates an LED-buffer for num-leds leds. The optional argument optLedType specif
 | 2 | GRBW |
 | 3 | RGBW |
 
+The optional argument optGammaCorr can be set to enable gamma correction for this LED-buffer. Gamma correction makes the brightness non-linear matching the response of human eyes. Generally that makes colors look better and it is something that all monitors do. The downside is that fewer distinct colors are available as not all bits can be used.
+
 Example:
 
 ```clj
 ; Create a buffer for 10 GRBW-LEDs
 (def strip1 (rgbled-buffer 10 2))
+
+; Create a buffer for 10 GRB-LEDs with gamma-correction enabled
+(def strip2 (rgbled-buffer 10 0 1))
 ```
 
 ---
@@ -6020,16 +6039,26 @@ Example:
 | Express | 6.05+ |
 
 ```clj
-(rgbled-color buffer led-num color)
+(rgbled-color buffer led-num color optBrightness)
 ```
 
-Set LED led-num to color in buffer. The color is a number in WRGB8888 format. When the white color is used the type must be u32 as all 32 bits are needed then. Buffer is must be created with rgbled-buffer. Example:
+Set LED led-num to color in buffer. The color is a number in WRGB8888 format, alternatively a list of numbers in WRGB8888 format. When a list of numbers is used all colors after led-num will be set to the corresponding colors in the list. When the white color is used the type must be u32 as all 32 bits are needed then. Buffer must be created with rgbled-buffer. Example:
 
 ```clj
+; Create led-buffer and bind it to strip1
 (def strip1 (rgbled-buffer 10 2))
 
-(rgbled-color strip1 0 0x00FF0000u32) ; Set the first LED to red
-(rgbled-color strip1 1 0xFF000000u32) ; Set the second LED to white
+; Set the first LED to red
+(rgbled-color strip1 0 0x00FF0000u32)
+
+; Set the second LED to white
+(rgbled-color strip1 1 0xFF000000u32)
+
+; Set the second LED to white with 30 % brightness
+(rgbled-color strip1 1 0xFF000000u32 0.3)
+
+; Set LED 4 to white, LED 5 to red and LED 6 to green, all at 40 % brightness
+(rgbled-color strip1 4 '(0xFF000000u32 0x00FF0000u32 0x0000FF00u32) 0.4)
 ```
 
 Note: This function only updates the color in the buffer. To show the new color the function rgbled-update must be used.
@@ -6080,6 +6109,178 @@ It is possible to use multiple pins to drive different LED-strips. Even differen
 ; function will block until the previous update has finished.
 (rgbled-init 21)
 (rgbled-update strip2)
+```
+
+---
+
+## Color Manipulation
+
+The following functions are useful for manipulating colors and lists of colors. The color format used here is RGB888 (or WRGB8888), which is compatible with both the display and the RGB LED extensions. This format is just a u32-number and it is also compatible with common hexadecimal color codes found in most color pickers and HTML color tables.
+
+---
+
+#### color-make
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(color-make red green blue optWhite)
+```
+
+Make color from individual color components. The components can be expressed in 0 to 255 or as floating point 0.0 to 1.0 (in any combination). optWhite is an optional argument for the white component, which often is used in RGBW LED-strips. Example:
+
+```clj
+(color-make 37 150 90) ; Creates the color 0x2596be
+(color-make 0.146 0.59 0.747) ; Creates the color 0x2596be
+```
+
+---
+
+#### color-split
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(color-split color optMode)
+```
+
+Split color into a list of components. The optional argument optMode can be used to define how the color is split. The options are:
+
+| Number | Mode |
+|---|---|
+| 0 | (red green blue) |
+| 1 | (red green blue white) |
+| 2 | (red-float green-float blue-float) |
+| 3 | (red-float green-float blue-float white-float) |
+
+Example:
+
+```clj
+(color-split 0x123456)
+> (18 52 86)
+
+(color-split 0x123456 1)
+> (18 52 86 0)
+
+(color-split 0x50123456u32 1)
+> (18 52 86 80)
+
+(color-split 0x123456 2)
+> (0.070588f32 0.203922f32 0.337255f32)
+
+(color-split 0x123456 3)
+> (0.070588f32 0.203922f32 0.337255f32 0.000000f32)
+
+(color-split (color-make 123 250 99))
+> (123 250 99)
+```
+
+---
+
+#### color-mix
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(color-mix color1 color2 ratio)
+```
+
+Mix color1 with color2 with mix-ratio ratio. Ratio has a range of 0.0 to 1.0. Ratio 0.0 will result in color1 and ratio 1.0 will result in color2. The argument color1 can be a single color or a list of colors. If it is a list of colors a list with the mixed colors will be returned.
+
+Example:
+
+```clj
+; Helper function to print colors as components
+(defun print-color (c)
+    (if (eq (type-of c) type-list)
+        (print (map (fn (x) (color-split x 1)) c))
+        (print (color-split c 1))
+    )
+)
+
+(print-color (color-mix (color-make 123 250 99) (color-make 12 25 9) 0.3))
+> (89 182 71 0)
+
+(print-color (color-mix '(0x224488 0x111111 0x222222) 0x446699 0.5))
+> ((51 85 144 0) (42 59 85 0) (51 68 93 0))
+```
+
+---
+
+#### color-add
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(color-add color1 color2)
+```
+
+Add color2 to color1. The components are truncated at 255. As with color-mix, the argument color1 can be a single color or a list with colors. Example:
+
+```clj
+; Helper function to print colors as components
+(defun print-color (c)
+    (if (eq (type-of c) type-list)
+        (print (map (fn (x) (color-split x 1)) c))
+        (print (color-split c 1))
+    )
+)
+
+(print-color (color-add (color-make 123 250 99) (color-make 12 25 9)))
+> (135 255 108 0)
+
+(print-color (color-add '(0x224488 0x111111 0x222222) 0x446699))
+> ((102 170 255 0) (85 119 170 0) (102 136 187 0))
+```
+
+#### color-sub
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(color-sub color1 color2)
+```
+
+Subtract color2 from color1. The components are truncated at 0. As with color-mix, the argument color1 can be a single color or a list with colors.
+
+---
+
+#### color-scale
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.05+ |
+
+```clj
+(color-sub color factor)
+```
+
+Scale color with factor. The result is truncated between 0 to 255. As with color-mix, the argument color can be a single color or a list with colors. The argument factor is a scaling factor. Example:
+
+```clj
+; Helper function to print colors as components
+(defun print-color (c)
+    (if (eq (type-of c) type-list)
+        (print (map (fn (x) (color-split x 1)) c))
+        (print (color-split c 1))
+    )
+)
+
+(print-color (color-scale (color-make 123 250 99) 2.0))
+> (246 255 198 0)
+
+(print-color (color-scale '(0x224488 0x111111 0x222222) 0.6))
+> ((20 40 81 0) (10 10 10 0) (20 20 20 0))
 ```
 
 ---
