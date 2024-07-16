@@ -177,12 +177,17 @@ package_dict["MKSESC_84_200_HP"] = [['mksesc_84_200_hp', default_name],
 package_dict["STR500"] = [['str500', default_name],
                     ['str500_no_limits', no_limits_name]]
 package_dict["STR500_01"] = [['str500_01', default_name]]
+package_dict["STR500_HP"] = [['str500_hp', default_name],
+                    ['str500_hp_no_limits', no_limits_name]]
 package_dict["RB"] = [['rb', default_name]]
 package_dict["STR365"] = [['str365', default_name],
                     ['str365_no_limits', no_limits_name]]
 package_dict["SPARKF"] = [['sparkf', default_name]]
 package_dict["VESC_BASIC"] = [['basic', default_name],
                     ['basic_no_limits', no_limits_name]]
+package_dict["RSR_DD_V1"] = [['RSR_DD_V1', default_name],
+                    ['RSR_DD_V1_005', 'RSR_DD_V1_005.bin']]
+package_dict["RSR_DD_V2"] = [['RSR_DD_V2', default_name]]
 
 # This is the firmware stub string
 res_firmwares_string = '        <file>TARGET_DESTINATION_DIRECTORY/TARGET_DESTINATION_FILENAME</file>\n'
