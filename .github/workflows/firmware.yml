@@ -70,7 +70,7 @@ jobs:
           cat "${{ env.FW_TMP_DIR }}/bldc.patch"
         shell: bash
       - name: Install GNU Arm Embedded Toolchain - ${{ matrix.gcc }}
-        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        uses: carlosperate/arm-none-eabi-gcc-action@v1.8.2
         with:
           release: ${{ matrix.gcc }}
       - name: Create Firmware Package
