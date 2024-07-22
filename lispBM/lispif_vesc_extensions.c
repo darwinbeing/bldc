@@ -183,6 +183,7 @@ typedef struct {
 	lbm_uint foc_offsets_cal_on_boot;
 	lbm_uint foc_fw_current_max;
 	lbm_uint foc_fw_duty_start;
+	lbm_uint foc_short_ls_on_zero_duty;
 	lbm_uint m_invert_direction;
 	lbm_uint m_out_aux_mode;
 	lbm_uint m_motor_temp_sens_type;
@@ -481,6 +482,8 @@ static bool compare_symbol(lbm_uint sym, lbm_uint *comp) {
 			lbm_add_symbol_const("foc-fw-current-max", comp);
 		} else if (comp == &syms_vesc.foc_fw_duty_start) {
 			lbm_add_symbol_const("foc-fw-duty-start", comp);
+		} else if (comp == &syms_vesc.foc_short_ls_on_zero_duty) {
+			lbm_add_symbol_const("foc-short-ls-on-zero-duty", comp);
 		} else if (comp == &syms_vesc.m_invert_direction) {
 			lbm_add_symbol_const("m-invert-direction", comp);
 		} else if (comp == &syms_vesc.m_out_aux_mode) {
@@ -883,8 +886,18 @@ static lbm_value ext_bms_force_balance(lbm_value *args, lbm_uint argn) {
 	uint8_t data[2];
 	data[0] = COMM_BMS_FORCE_BALANCE;
 	data[1] = force;
-
 	bms_process_cmd(data, 2, 0);
+
+	return ENC_SYM_TRUE;
+}
+
+static lbm_value ext_bms_zero_offset(lbm_value *args, lbm_uint argn) {
+	(void)args; (void)argn;
+
+	uint8_t data[1];
+	data[0] = COMM_BMS_ZERO_CURRENT_OFFSET;
+
+	bms_process_cmd(data, 1, 0);
 
 	return ENC_SYM_TRUE;
 }
@@ -3383,6 +3396,9 @@ static lbm_value ext_conf_set(lbm_value *args, lbm_uint argn) {
 	} else if (compare_symbol(name, &syms_vesc.foc_offsets_cal_on_boot)) {
 		mcconf->foc_offsets_cal_on_boot = lbm_dec_as_i32(args[1]);
 		changed_mc = 1;
+	} else if (compare_symbol(name, &syms_vesc.foc_short_ls_on_zero_duty)) {
+		mcconf->foc_short_ls_on_zero_duty = lbm_dec_as_i32(args[1]);
+		changed_mc = 1;
 	} else if (compare_symbol(name, &syms_vesc.controller_id)) {
 		appconf->controller_id = lbm_dec_as_i32(args[1]);
 		changed_app = 1;
@@ -3800,6 +3816,8 @@ static lbm_value ext_conf_get(lbm_value *args, lbm_uint argn) {
 		res = lbm_enc_float(mcconf->foc_fw_current_max);
 	} else if (compare_symbol(name, &syms_vesc.foc_fw_duty_start)) {
 		res = lbm_enc_float(mcconf->foc_fw_duty_start);
+	} else if (compare_symbol(name, &syms_vesc.foc_short_ls_on_zero_duty)) {
+		res = lbm_enc_i(mcconf->foc_short_ls_on_zero_duty);
 	} else if (compare_symbol(name, &syms_vesc.m_invert_direction)) {
 		res = lbm_enc_i(mcconf->m_invert_direction);
 	} else if (compare_symbol(name, &syms_vesc.m_out_aux_mode)) {
@@ -5263,6 +5281,7 @@ void lispif_load_vesc_extensions(void) {
 	lbm_add_extension("send-bms-can", ext_send_bms_can);
 	lbm_add_extension("set-bms-chg-allowed", ext_set_bms_chg_allowed);
 	lbm_add_extension("bms-force-balance", ext_bms_force_balance);
+	lbm_add_extension("bms-zero-offset", ext_bms_zero_offset);
 	lbm_add_extension("get-adc", ext_get_adc);
 	lbm_add_extension("override-temp-motor", ext_override_temp_motor);
 	lbm_add_extension("get-adc-decoded", ext_get_adc_decoded);
@@ -5520,6 +5539,26 @@ void lispif_load_vesc_extensions(void) {
 	lbm_string_extensions_init();
 }
 
+// pull in from eval_cps
+void lbm_request_gc(void);
+
+static bool start_flatten_with_gc(lbm_flat_value_t *v, size_t buffer_size) {
+	if (lbm_start_flatten(v, buffer_size)) {
+		return true;
+	}
+
+	int timeout = 3;
+	uint32_t gc_last = lbm_heap_state.gc_num;
+	lbm_request_gc();
+
+	while (lbm_heap_state.gc_num <= gc_last && timeout > 0) {
+		chThdSleepMilliseconds(1);
+		timeout--;
+	}
+
+	return lbm_start_flatten(v, buffer_size);
+}
+
 void lispif_process_can(uint32_t can_id, uint8_t *data8, int len, bool is_ext) {
 	if (is_ext) {
 		if (can_recv_eid_cid < 0 && !event_can_eid_en)  {
@@ -5532,7 +5571,7 @@ void lispif_process_can(uint32_t can_id, uint8_t *data8, int len, bool is_ext) {
 	}
 
 	lbm_flat_value_t v;
-	if (lbm_start_flatten(&v, 50 + len)) {
+	if (start_flatten_with_gc(&v, 50 + len)) {
 		f_cons(&v);
 
 		if ((can_recv_sid_cid < 0 && !is_ext) || (can_recv_eid_cid < 0 && is_ext)) {
@@ -5573,7 +5612,7 @@ void lispif_process_custom_app_data(unsigned char *data, unsigned int len) {
 	}
 
 	lbm_flat_value_t v;
-	if (lbm_start_flatten(&v, 30 + len)) {
+	if (start_flatten_with_gc(&v, 30 + len)) {
 		if (recv_data_cid < 0) {
 			f_cons(&v);
 			f_sym(&v, sym_event_data_rx);
@@ -5620,7 +5659,7 @@ void lispif_process_rmsg(int slot, unsigned char *data, unsigned int len) {
 	}
 
 	lbm_flat_value_t v;
-	if (lbm_start_flatten(&v, 10 + len)) {
+	if (start_flatten_with_gc(&v, 10 + len)) {
 		f_lbm_array(&v, len, data);
 		lbm_finish_flatten(&v);
 
