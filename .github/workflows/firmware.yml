@@ -1,0 +1,86 @@
+name: GenFirmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      vt_ver:
+        description: "VESC Tool Version"
+        required: true
+        default: "master"
+        type: string
+      fw_ver:
+        description: "Firmware Version"
+        required: true
+        default: "master"
+        type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        gcc: ['7-2018-q2']
+        # gcc: ['10-2020-q4', 'latest']
+    steps:
+      - name: Version2Ref
+        run: |
+          if [[ "${{ inputs.fw_ver }}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            echo "FW_REF=release_${BASH_REMATCH[1]}_${BASH_REMATCH[2]}" >> $GITHUB_ENV
+          elif [[ "${{ inputs.fw_ver }}" == "master" ]]; then
+            echo "FW_REF=master" >> $GITHUB_ENV
+          else
+            echo "FW_REF=${{ inputs.fw_ver }}" >> $GITHUB_ENV
+          fi
+        shell: bash
+      - name: Clone Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.FW_REF }}
+      - name: Create TMP Dir
+        id: mktemp
+        run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
+        shell: bash
+      - name: Setup
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        id: GetVersion
+        run: |
+          URL=https://raw.githubusercontent.com/darwinbeing/bldc/ci/patches/bldc.patch
+          curl "$URL" -o ${{ env.FW_TMP_DIR }}/bldc.patch
+          cat "${{ env.FW_TMP_DIR }}/bldc.patch"
+        shell: bash
+      - name: Install GNU Arm Embedded Toolchain - ${{ matrix.gcc }}
+        uses: carlosperate/arm-none-eabi-gcc-action@v1.8.2
+        with:
+          release: ${{ matrix.gcc }}
+      - name: Create Firmware Package
+        run: |
+          echo "Building Firmware"
+          if [[ "${{ inputs.vt_ver }}" == "3.01" ]]; then
+              # VESC Tool version: 3.01, Firmware version: 5.03
+              mkdir -p package
+              find build_all -mindepth 1 -type d -exec cp -r {} package \;
+          else
+              git apply "${{ env.FW_TMP_DIR }}/bldc.patch"
+              # patch -p1 < ${{ env.FW_TMP_DIR }}/bldc.patch
+              make all_fw_package
+          fi
+          echo "Copy CHANGELOG"
+          cp -v CHANGELOG* package
+      - name: Upload Firmware Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ inputs.fw_ver }}
+          path: package
+      - name: Invoke workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CreateRelease
+          token: ${{ secrets.PAT }}
+          repo: darwinbeing/vesc_tool
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
