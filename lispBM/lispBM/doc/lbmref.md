@@ -959,7 +959,7 @@ Multiplying an arbitrary number of values. The form of a `*` expression is `(* e
 
 ### /
 
-Division. The form of a `/` expression is `(/ expr1 ... exprN)`. 
+Division. The form of a `/` expression is `(/ expr1 ... exprN)`. The resulting type is the same as the inputs (after their types have been promoted of course). 
 
 <table>
 <tr>
@@ -1006,6 +1006,24 @@ Division. The form of a `/` expression is `(/ expr1 ... exprN)`.
 
 ```clj
 (/ 256 2 2 2 2 2 2 2)
+```
+
+
+</td>
+<td>
+
+```clj
+2
+```
+
+
+</td>
+</tr>
+<tr>
+<td>
+
+```clj
+(/ 5 2)
 ```
 
 
@@ -1091,6 +1109,60 @@ Modulo operation. The form of a `mod` expression is `(mod expr1 exp2)`. The modu
 </tr>
 </table>
 
+
+
+
+---
+
+
+### //
+
+Integer division operation. Like normal division except if the result is a floating point value it is cast to an integer, which floors the result. The form of a `//` expression is `(// expr1 ... exprN)`. Can be used as a elegant complement to `mod`, with `//` returning the quotient and `mod` returning the remainder of a division. 
+
+<table>
+<tr>
+<td> Example </td> <td> Result </td>
+</tr>
+<tr>
+<td>
+
+```clj
+(// 5.000000f32 2)
+```
+
+
+</td>
+<td>
+
+```clj
+2
+```
+
+
+</td>
+</tr>
+<tr>
+<td>
+
+```clj
+(progn (var total-seconds 62.500000f32)
+       (var minutes (// total-seconds 60))
+       (var seconds (mod total-seconds 60))
+       (str-join (list (str-from-n minutes) m  (str-from-n seconds) s) [0]))
+```
+
+
+</td>
+<td>
+
+```clj
+1m 2.5s
+```
+
+
+</td>
+</tr>
+</table>
 
 
 
@@ -4209,11 +4281,10 @@ If no `cond-exprN` evaluates to true, the result of the entire conditional is `n
 
 
 ```clj
-(define a 0)
-(cond ((< a 0) 'abrakadabra)
+ (define a 0)
+ (cond ((< a 0) 'abrakadabra)
       ((> a 0) 'llama)
       ((= a 0) 'hello-world))
-
 ```
 
 
@@ -4233,11 +4304,10 @@ hello-world
 
 
 ```clj
-(define a 5)
-(cond ((= a 1) 'doughnut)
+ (define a 5)
+ (cond ((= a 1) 'doughnut)
       ((= a 7) 'apple-strudel)
       ((= a 10) 'baklava))
-
 ```
 
 
@@ -4626,13 +4696,12 @@ The  `list-of-local-bindings` are very similar to how `let` works, just that her
 
 
 ```clj
-(define sum 0)
-(loop ((a 0))
+ (define sum 0)
+ (loop ((a 0))
       (<= a 10)
       (progn (setq sum (+ sum a))
              (setq a (+ a 1))))
-sum
-
+ sum
 ```
 
 
@@ -4762,10 +4831,9 @@ The `set` form is used to change the value of some variable in an environment. Y
 
 
 ```clj
-(define a 10)
-(set 'a 20)
-a
-
+ (define a 10)
+ (set 'a 20)
+ a
 ```
 
 
@@ -4793,10 +4861,9 @@ a
 
 
 ```clj
-(progn (var a 10)
+ (progn (var a 10)
        (set 'a 20)
        a)
-
 ```
 
 
@@ -4832,10 +4899,9 @@ The `setq` special-form is similar to `set` and to `setvar` but expects the firs
 
 
 ```clj
-(define a 10)
-(setq a 20)
-a
-
+ (define a 10)
+ (setq a 20)
+ a
 ```
 
 
@@ -4863,10 +4929,9 @@ Just like `set` and `setvar`, `setq` can be used on variables that are bound loc
 
 
 ```clj
-(progn (var a 10)
+ (progn (var a 10)
        (setq a 20)
        a)
-
 ```
 
 
@@ -5973,10 +6038,9 @@ The `setcar` is a destructive update of the car field of a cons-cell.
 
 
 ```clj
-(define apa '(1 . 2))
-(setcar apa 42)
-apa
-
+ (define apa '(1 . 2))
+ (setcar apa 42)
+ apa
 ```
 
 
@@ -5996,10 +6060,9 @@ apa
 
 
 ```clj
-(define apa (list 1 2 3 4))
-(setcar apa 42)
-apa
-
+ (define apa (list 1 2 3 4))
+ (setcar apa 42)
+ apa
 ```
 
 
@@ -6035,10 +6098,9 @@ The `setcdr` is a destructive update of the cdr field of a cons-cell.
 
 
 ```clj
-(define apa '(1 . 2))
-(setcdr apa 42)
-apa
-
+ (define apa '(1 . 2))
+ (setcdr apa 42)
+ apa
 ```
 
 
@@ -6058,10 +6120,9 @@ apa
 
 
 ```clj
-(define apa (list 1 2 3 4))
-(setcdr apa (list 99 100))
-apa
-
+ (define apa (list 1 2 3 4))
+ (setcdr apa (list 99 100))
+ apa
 ```
 
 
@@ -6097,9 +6158,8 @@ apa
 
 
 ```clj
-(define apa (list 1 2 3 4 5 6 7 8 9 10))
-(take apa 5)
-
+ (define apa (list 1 2 3 4 5 6 7 8 9 10))
+ (take apa 5)
 ```
 
 
@@ -6135,9 +6195,8 @@ apa
 
 
 ```clj
-(define apa (list 1 2 3 4 5 6 7 8 9 10))
-(drop apa 5)
-
+ (define apa (list 1 2 3 4 5 6 7 8 9 10))
+ (drop apa 5)
 ```
 
 
@@ -6173,9 +6232,8 @@ apa
 
 
 ```clj
-(define apa (list 1 2 3 4 5 6 7 8 9 10))
-(reverse apa)
-
+ (define apa (list 1 2 3 4 5 6 7 8 9 10))
+ (reverse apa)
 ```
 
 
@@ -6321,10 +6379,9 @@ Rotating a list in the negative direction is slightly faster than rotating in th
 
 
 ```clj
-(define a (list 2 4 6 8 10 12))
-(define b (list 1 3 5))
-(merge < a b)
-
+ (define a (list 2 4 6 8 10 12))
+ (define b (list 1 3 5))
+ (merge < a b)
 ```
 
 
@@ -6360,9 +6417,8 @@ Rotating a list in the negative direction is slightly faster than rotating in th
 
 
 ```clj
-(define a (list 1 9 2 5 1 8 3))
-(sort < a)
-
+ (define a (list 1 9 2 5 1 8 3))
+ (sort < a)
 ```
 
 
@@ -6508,9 +6564,8 @@ The `setassoc` function destructively updates a key-value mapping in an alist. T
 
 
 ```clj
-(define apa (list '(1 . horse) '(2 . donkey) '(3 . shark)))
-(setassoc apa 2 'llama)
-
+ (define apa (list '(1 . horse) '(2 . donkey) '(3 . shark)))
+ (setassoc apa 2 'llama)
 ```
 
 
@@ -7586,11 +7641,10 @@ Use `spawn-trap` to spawn a child process and enable trapping of exit conditions
 
 
 ```clj
-(defun thd nil (+ 1 2))
-(spawn-trap thd)
-(recv ((exit-error (? tid) (? e)) 'crash)
+ (defun thd nil (+ 1 2))
+ (spawn-trap thd)
+ (recv ((exit-error (? tid) (? e)) 'crash)
       ((exit-ok (? tid) (? v)) 'ok))
-
 ```
 
 
@@ -7610,11 +7664,10 @@ ok
 
 
 ```clj
-(defun thd nil (+ 1 kurt-russel))
-(spawn-trap thd)
-(recv ((exit-error (? tid) (? e)) 'crash)
+ (defun thd nil (+ 1 kurt-russel))
+ (spawn-trap thd)
+ (recv ((exit-error (? tid) (? e)) 'crash)
       ((exit-ok (? tid) (? v)) 'ok))
-
 ```
 
 
@@ -7657,7 +7710,7 @@ Use `self` to obtain the thread-id of the thread in which `self` is evaluated. T
 <td>
 
 ```clj
-3197
+3131
 ```
 
 
@@ -7820,10 +7873,9 @@ The `kill` function allows you to force terminate another thread. It has the sig
 
 
 ```clj
-(defun f nil (f))
-(define id (spawn f))
-(kill id nil)
-
+ (defun f nil (f))
+ (define id (spawn f))
+ (kill id nil)
 ```
 
 
@@ -7851,11 +7903,10 @@ The `val-expr` can be observed if the thread exit status is captured using `spaw
 
 
 ```clj
-(defun f nil (f))
-(define id (spawn-trap f))
-(kill id 'kurt-russel)
-(recv ((? x) x))
-
+ (defun f nil (f))
+ (define id (spawn-trap f))
+ (kill id 'kurt-russel)
+ (recv ((? x) x))
 ```
 
 
@@ -7864,7 +7915,7 @@ The `val-expr` can be observed if the thread exit status is captured using `spaw
 
 
 ```clj
-(exit-ok 175664 kurt-russel)
+(exit-ok 186695 kurt-russel)
 ```
 
 
@@ -7905,9 +7956,8 @@ To receive a message use the `recv` command. A process will block on a `recv` un
 
 
 ```clj
-(send (self) 28)
-(recv ((? n) (+ n 1)))
-
+ (send (self) 28)
+ (recv ((? n) (+ n 1)))
 ```
 
 
@@ -7945,11 +7995,10 @@ The form of an `recv-to` expression is ```clj (recv-to timeout-secs             
 
 
 ```clj
-(send (self) 28)
-(recv-to 0.100000f32
+ (send (self) 28)
+ (recv-to 0.100000f32
          ((? n) (+ n 1))
          (timeout 'no-message))
-
 ```
 
 
@@ -7975,11 +8024,10 @@ The form of an `recv-to` expression is ```clj (recv-to timeout-secs             
 
 
 ```clj
-(send (self) 'not-foo)
-(recv-to 0.100000f32
+ (send (self) 'not-foo)
+ (recv-to 0.100000f32
          (foo 'got-foo)
          (timeout 'no-message))
-
 ```
 
 
@@ -8574,10 +8622,9 @@ A value can be moved to flash storage to save space on the normal evaluation hea
 
 
 ```clj
-(define a [1 2 3 4 5 6])
-(move-to-flash a)
-a
-
+ (define a [1 2 3 4 5 6])
+ (move-to-flash a)
+ a
 ```
 
 
@@ -8597,10 +8644,9 @@ a
 
 
 ```clj
-(define ls '(1 2 3 4 5))
-(move-to-flash ls)
-ls
-
+ (define ls '(1 2 3 4 5))
+ (move-to-flash ls)
+ ls
 ```
 
 
@@ -8620,10 +8666,9 @@ ls
 
 
 ```clj
-(defun f (x) (+ x 1))
-(move-to-flash f)
-(f 10)
-
+ (defun f (x) (+ x 1))
+ (move-to-flash f)
+ (f 10)
 ```
 
 

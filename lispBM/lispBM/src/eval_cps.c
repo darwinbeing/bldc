@@ -806,10 +806,9 @@ void print_error_message(lbm_value error,
       error == ENC_SYM_RERROR) {
     printf_callback("***   Line:   %u\n", row);
     printf_callback("***   Column: %u\n", col);
-  } else if (row0 != -1 || row1 != -1 ) {
-    printf_callback("***   Between rows: (-1 unknown) \n");
-    printf_callback("***     Start: %d\n", (int32_t)row0);
-    printf_callback("***     End:   %d\n", (int32_t)row1);
+  } else if (row0 >= 0) {
+    if (row1 < 0) printf_callback("***   Starting at row: %d\n", row0);
+    else printf_callback("***   Between row %d and %d\n", row0, row1);
   }
 
   printf_callback("\n");
@@ -841,21 +840,21 @@ bool create_string_channel(char *str, lbm_value *res, lbm_value dep) {
   lbm_char_channel_t *chan = NULL;
   lbm_string_channel_state_t *st = NULL;
 
-  st = (lbm_string_channel_state_t*)lbm_memory_allocate(sizeof(lbm_string_channel_state_t) / sizeof(lbm_uint) +1);
+  st = (lbm_string_channel_state_t*)lbm_malloc(sizeof(lbm_string_channel_state_t));
   if (st == NULL) {
     return false;
   }
-  chan = (lbm_char_channel_t*)lbm_memory_allocate(sizeof(lbm_char_channel_t) / sizeof(lbm_uint) + 1);
+  chan = (lbm_char_channel_t*)lbm_malloc(sizeof(lbm_char_channel_t));
   if (chan == NULL) {
-    lbm_memory_free((lbm_uint*)st);
+    lbm_free(st);
     return false;
   }
 
   lbm_create_string_char_channel(st, chan, str);
   lbm_value cell = lbm_heap_allocate_cell(LBM_TYPE_CHANNEL, (lbm_uint) chan, ENC_SYM_CHANNEL_TYPE);
   if (cell == ENC_SYM_MERROR) {
-    lbm_memory_free((lbm_uint*)st);
-    lbm_memory_free((lbm_uint*)chan);
+    lbm_free(st);
+    lbm_free(chan);
     return false;
   }
 
@@ -982,12 +981,10 @@ static void finish_ctx(void) {
   /* Drop the continuation stack immediately to free up lbm_memory */
   lbm_stack_free(&ctx_running->K);
   ctx_done_callback(ctx_running);
-  if (lbm_memory_ptr_inside((lbm_uint*)ctx_running->name)) {
-    lbm_free(ctx_running->name);
-  }
-  if (lbm_memory_ptr_inside((lbm_uint*)ctx_running->error_reason)) {
-    lbm_memory_free((lbm_uint*)ctx_running->error_reason);
-  }
+
+  lbm_free(ctx_running->name); //free name if in LBM_MEM
+  lbm_memory_free((lbm_uint*)ctx_running->error_reason); //free error_reason if in LBM_MEM
+
   lbm_memory_free((lbm_uint*)ctx_running->mailbox);
   lbm_memory_free((lbm_uint*)ctx_running);
   ctx_running = NULL;
@@ -1252,12 +1249,12 @@ static lbm_cid lbm_create_ctx_parent(lbm_value program, lbm_value env, lbm_uint 
       gc();
     }
 #endif
-    ctx->name = lbm_malloc(strlen(name) + 1);
+    ctx->name = lbm_malloc(name_len);
     if (ctx->name == NULL) {
       lbm_value roots[2] = {program, env};
       lbm_gc_mark_roots(roots, 2);
       gc();
-      ctx->name = lbm_malloc(strlen(name) + 1);
+      ctx->name = lbm_malloc(name_len);
     }
     if (ctx->name == NULL) {
       lbm_stack_free(&ctx->K);
@@ -1265,7 +1262,7 @@ static lbm_cid lbm_create_ctx_parent(lbm_value program, lbm_value env, lbm_uint 
       lbm_memory_free((lbm_uint*)ctx);
       return -1;
     }
-    memcpy(ctx->name, name, name_len+1);
+    memcpy(ctx->name, name, name_len);
   } else {
      ctx->name = NULL;
   }
@@ -1691,16 +1688,19 @@ static void eval_symbol(eval_context_t *ctx) {
   }
 }
 
+// (quote e) => e
 static void eval_quote(eval_context_t *ctx) {
   ctx->r = get_cadr(ctx->curr_exp);
   ctx->app_cont = true;
 }
 
+// a => a
 static void eval_selfevaluating(eval_context_t *ctx) {
   ctx->r = ctx->curr_exp;
   ctx->app_cont = true;
 }
 
+// (progn e1 ... en)
 static void eval_progn(eval_context_t *ctx) {
   lbm_value exps = get_cdr(ctx->curr_exp);
 
@@ -1714,8 +1714,7 @@ static void eval_progn(eval_context_t *ctx) {
       sptr[2] = cell->cdr;     // Requirement: sptr[2] is a cons.
       sptr[3] = PROGN_REST;
     }
-    // Nothing is pushed to stack for final element in progn. (tail-call req)
-  } else if (lbm_is_symbol_nil(exps)) {
+  } else if (lbm_is_symbol_nil(exps)) { // Empty progn is nil
     ctx->r = ENC_SYM_NIL;
     ctx->app_cont = true;
   } else {
@@ -1723,6 +1722,7 @@ static void eval_progn(eval_context_t *ctx) {
   }
 }
 
+// (atomic e1 ... en)
 static void eval_atomic(eval_context_t *ctx) {
   if (is_atomic) atomic_error();
   stack_reserve(ctx, 1)[0] = EXIT_ATOMIC;
@@ -1745,6 +1745,8 @@ static void eval_callcc(eval_context_t *ctx) {
   if (lbm_is_ptr(cont_array)) {
     lbm_array_header_t *arr = assume_array(cont_array);
     memcpy(arr->data, ctx->K.data, ctx->K.sp * sizeof(lbm_uint));
+    // The stored stack contains the is_atomic flag.
+    // This flag is overwritten in the following execution path.
 
     lbm_value acont = cons_with_gc(ENC_SYM_CONT, cont_array, ENC_SYM_NIL);
     lbm_value arg_list = cons_with_gc(acont, ENC_SYM_NIL, ENC_SYM_NIL);
@@ -2184,8 +2186,8 @@ static void receive_base(eval_context_t *ctx, lbm_value pats, float timeout_time
 }
 
 // Receive-timeout
-// (recv timeout (pattern expr)
-//               (pattern expr))
+// (recv-to timeout (pattern expr)
+//                  (pattern expr))
 static void eval_receive_timeout(eval_context_t *ctx) {
   if (is_atomic) atomic_error();
   lbm_value timeout_val = get_cadr(ctx->curr_exp);
@@ -2266,7 +2268,7 @@ static void cont_progn_rest(eval_context_t *ctx) {
     sptr[2] = rest_cdr; // Requirement: rest_cdr is a cons
     stack_reserve(ctx, 1)[0] = PROGN_REST;
   } else {
-    // allow for tail recursion
+    // Nothing is pushed to stack for final element in progn. (tail-call req)
     lbm_stack_drop(&ctx->K, 3);
   }
 }
@@ -3759,6 +3761,7 @@ static void cont_read_next_token(eval_context_t *ctx) {
 
   if (lbm_dec_u(grab_row0)) {
     ctx->row0 = (int32_t)lbm_channel_row(chan);
+    ctx->row1 = -1; // a new start, end is unknown
   }
 
   /* Attempt to extract tokens from the character stream */
@@ -4063,9 +4066,12 @@ static void cont_read_start_array(eval_context_t *ctx) {
     lbm_value array;
 
     if (!lbm_heap_allocate_array(&array, 0)) {
-      lbm_set_error_reason((char*)lbm_error_str_read_no_mem);
-      lbm_channel_reader_close(str);
-      error_ctx(ENC_SYM_FATAL_ERROR); // Terminates ctx
+      gc();
+      if (!lbm_heap_allocate_array(&array, 0)) {
+        lbm_set_error_reason((char*)lbm_error_str_read_no_mem);
+        lbm_channel_reader_close(str);
+        error_ctx(ENC_SYM_FATAL_ERROR); // Terminates ctx
+      }
     }
     lbm_stack_drop(&ctx->K, 1);
     ctx->r = array;
@@ -4088,12 +4094,17 @@ static void cont_read_start_array(eval_context_t *ctx) {
     lbm_value array;
     initial_size = sizeof(lbm_uint) * initial_size;
 
+    // Keep in mind that this allocation can fail for both
+    // lbm_memory and heap reasons.
     if (!lbm_heap_allocate_array(&array, initial_size)) {
-      lbm_set_error_reason((char*)lbm_error_str_read_no_mem);
-      lbm_channel_reader_close(str);
-      error_ctx(ENC_SYM_FATAL_ERROR);
-      // NOTE: If array is not created evaluation ends here.
-      // Static analysis seems unaware.
+      gc();
+      if (!lbm_heap_allocate_array(&array, initial_size)) {
+        lbm_set_error_reason((char*)lbm_error_str_read_no_mem);
+        lbm_channel_reader_close(str);
+        error_ctx(ENC_SYM_FATAL_ERROR);
+        // NOTE: If array is not created evaluation ends here.
+        // Static analysis seems unaware.
+      }
     }
 
     sptr[0] = array;
@@ -4229,7 +4240,7 @@ static void cont_read_eval_continue(eval_context_t *ctx) {
         return;
       }
     }
-    lbm_value *rptr = stack_reserve(ctx, 6);
+    lbm_value *rptr = stack_reserve(ctx, 8);
     rptr[0] = stream;
     rptr[1] = env;
     rptr[2] = READ_EVAL_CONTINUE;

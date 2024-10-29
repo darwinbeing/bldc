@@ -797,6 +797,22 @@ Hold shutdown. When hold is true hardware shutdown will be delayed until hold is
 
 ---
 
+#### const-heap-erase
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 6.06+ |
+
+```clj
+(const-heap-erase)
+```
+
+Erase constant heap. This can be used in the beginning of the application to erase the constant memory of the application. That is useful for applications that do not always write the same things to constant memory in the same order after starting. Situations where that can occur is when the application takes different execution paths depending on external events or when writing variables to constant memory that differ based on external events.
+
+Running this command in the beginning of the application should prevent any write-to-flash errors, but the command takes a few seconds to execute and puts some wear on the flash memory. The reader will become slightly slower in const blocks after running this command compared to an application where constant memory already has been written in previous runs.
+
+---
+
 #### reboot
 
 | Platforms | Firmware |
@@ -4105,6 +4121,34 @@ Example that forever prints "Hello World" every two seconds:
                 (print "Hello World")
                 (sleep 2)
 })))
+```
+
+From firmware 6.06 it is possible to give the thread a name and/or a stack size. That gives the following combinations of possibilities:
+
+```clj
+; No name and default stack size
+(loopwhile-thd () t {
+        (print "Hello World1")
+        (sleep 2)
+})
+
+; No name and stack size 100
+(loopwhile-thd 100 t {
+        (print "Hello Worl2")
+        (sleep 2)
+})
+
+; Name ThdTest and default stack size
+(loopwhile-thd "ThdTest" t {
+        (print "Hello World3")
+        (sleep 2)
+})
+
+; Name ThdTest2 and stack size 100
+(loopwhile-thd ("ThdTest2" 100) t {
+        (print "Hello World4")
+        (sleep 2)
+})
 ```
 
 ---
