@@ -677,10 +677,11 @@ Read system info parameter param. Example:
 (sysinfo 'uuid) ; STM32 UUID. ESC only.
 (sysinfo 'runtime) ; Total runtime in seconds. ESC only.
 (sysinfo 'odometer) ; Total odometer in meters. ESC only. Added in 6.06.
-(sysinfo 'git-branch) ; Git branch name. ESC only.
-(sysinfo 'git-hash) ; Git hash of current commit. ESC only.
+(sysinfo 'git-branch) ; Git branch name.
+(sysinfo 'git-hash) ; Git hash of current commit.
 (sysinfo 'compiler) ; GCC version, e.g. 7.3.1. ESC only.
 (sysinfo 'hw-type) ; Hardware type, e.g. hw-express. Added in 6.02.
+(sysinfo 'part-running) ; Running partition name. Express only.
 ```
 
 ---
@@ -3581,6 +3582,7 @@ The following selection of app and motor parameters can be read and set from Lis
                         ;    9: APP_PAS
                         ;    10: APP_ADC_PAS
 'controller-id          ; VESC CAN ID
+'timeout-msec           ; Motor timeout in milliseconds (Added in FW 6.06)
 'can-baud-rate          ; CAN-bus baud rate (Added in FW 6.05)
                         ; 0: 125K
                         ; 1: 250K
@@ -6566,6 +6568,7 @@ Creates an LED-buffer for num-leds leds. The optional argument optLedType specif
 | 1 | RGB |
 | 2 | GRBW |
 | 3 | RGBW |
+| 4 | WRGB |
 
 The optional argument optGammaCorr can be set to enable gamma correction for this LED-buffer. Gamma correction makes the brightness non-linear matching the response of human eyes. Generally that makes colors look better and it is something that all monitors do. The downside is that fewer distinct colors are available as not all bits can be used.
 
@@ -7050,7 +7053,21 @@ Returns a 4k byte array from RTC memory that can be used as a general purpose ar
 Check if any client (e.g. VESC Tool) is connected over wifi. Returns true when connected, nil otherwise.
 
 ---
-´
+
+#### connected-hub
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.06+ |
+
+```clj
+(connected-hub)
+```
+
+Check if we are connected to the TCP hub. Returns true when connected, nil otherwise. Notice that this does not tell if someone is connected to us using the hub, it only tells that we are connected to the hub and that others can connect to us.
+
+---
+
 #### connected-ble
 
 | Platforms | Firmware |
