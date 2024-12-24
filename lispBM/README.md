@@ -284,6 +284,17 @@ Get value from BMS. Examples:
 (get-bms-val 'bms-chg-allowed) ; Charging allowed (Added in 6.05, Express only)
 ```
 
+**Note**  
+In firmware 6.06 the following temperature sensor convention was introduced for bms-temps-adc. So when using (get-bms-val 'bms-temps-adc 2) the maximum cell temperature should be returned. If a temperature returns less than -280 degC that reading is not applicable on that BMS. Keep in mind that it will take some time before all BMSes follow this convention after the 6.06 release.
+
+| Sensor Index | Function |
+|---|---|
+| 0 | Balance IC |
+| 1 | Cell Min |
+| 2 | Cell Max |
+| 3 | Mosfet Switch |
+| 4+ | Optional sensors |
+
 ---
 
 #### set-bms-val
@@ -4656,6 +4667,24 @@ Replace every occurrence of rep in str with optWith. If optWith is omitted every
 
 ---
 
+### str-replicate
+| Platforms | Firmware |
+|---|---|
+| ESC, Express | 6.00+ |
+
+```clj
+(str-replicate n char)
+```
+
+Build a string by replicating char n times.
+
+Example:
+```clj
+(str-replicate 8 \#x)
+> "xxxxxxxx"
+```
+---
+
 #### str-to-upper
 
 | Platforms | Firmware |
@@ -6395,6 +6424,39 @@ Write data to firmware-buffer at offset. Returns true on success or nil/timeout 
 ```
 
 Reboot and attempt to load the new firmware from the firmware-buffer using the bootloader. This function always returns true as there is no easy way to get the response from the bootloader. If the optional argument optCanId is omitted or set to -1 the command is performed locally, otherwise it is performed on the CAN-device with id optCanId.
+
+---
+
+#### fw-info
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.06+ |
+
+```clj
+(fw-info optCanId)
+```
+
+Get an assoc-list containing information about the VESC version number and git commit hashes. If optCanId is `-1` or not given the local device is queried. If the target device does not run a recent enough firmware that supports this, or if the CAN bus is otherwise non-functional, this function will timeout after 2 seconds returning the symbol `timeout`.
+
+The returned assoc-list has the following structure:
+
+```
+(
+    ('version . (majorNumber minorNumber))
+    ('test-version . number)
+    ('commit . str)
+    ('user-commit . str-or-nil)
+)
+```
+
+The test versions exact semantics depend on which firmware is running on the queried device, but on bldc for instance it is the beta version number. The user commit hash can be configured when you are compiling any of the VESC firmwares yourself, and is useful when you have a separate project that is using any of the VESC firmwares as a dependency, you can then configure it to be the commit of said project. If it was not configured when building it is instead set to `nil`. Unfortunately there is currently no documentation written anywhere for how to set it, [but here are the relevant lines of code in bldc's makefile](../Makefile#L167-L172), and [here they are in vesc_express's CMake configuration](https://github.com/vedderb/vesc_express/blob/main/CMakeLists.txt#L32-L37). Similar [flags exist for vesc_bms_fw](https://github.com/vedderb/vesc_bms_fw/blob/main/Makefile#L32-L37) and [vesc_gpstm](https://github.com/vedderb/vesc_gpstm/blob/main/Makefile#L31-L36).
+
+Example where we queried a bldc unit with the CAN id 10 running a development build of v6.6 beta 3:
+```clj
+(fw-info 10)
+> ((version 6u 6u) (test-version . 3u) (commit . "4f2df650c4ed6d820657217e966d1dbd6c2c01e6") (user-commit . nil))
+```
 
 ---
 

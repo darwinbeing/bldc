@@ -1005,6 +1005,23 @@
 
 ;; Built-in operations
 
+(define built-in-identity
+  (ref-entry "identity"
+             (list
+              (para (list "The identity function takes one argument which it directly returns."
+                          "The form of an `identity` expression is `(identity expr)`, where expr is an arbitrary lisp expression."
+                          "`(identity expr)` is a function application so all normal function application rules apply."
+                          "The most important property of function applications in this case is that the argument is evaluated which"
+                          "differentiates `identity` from `quote` which returns the argument unevaluated."
+                          ))
+              (code '((identity 1)
+                      (identity (+ 1 2))
+                      (identity 'apa)
+                      (identity 'kurt-russel)
+                      (identity '(+ 1 2))
+                      ))
+              end)))
+
 (define built-in-eval
   (ref-entry "eval"
              (list
@@ -1178,6 +1195,7 @@
 (define built-ins
   (section 2 "Built-in operations"
            (list 'hline
+                 built-in-identity
                  built-in-rest-args
                  built-in-eval
                  built-in-eval-program
@@ -2405,9 +2423,8 @@
                           ))
               (program '(((send (self) 28)
                           (recv-to 0.1
-                                   ((? n) (+ n 1))
-                                   (timeout 'no-message))
-
+                                   (timeout 'no-message)
+                                   ((? n) (+ n 1)))
                           )
                          ))
               (program '(((send (self) 'not-foo)
