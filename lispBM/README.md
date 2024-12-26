@@ -282,10 +282,11 @@ Get value from BMS. Examples:
 (get-bms-val 'bms-wh-cnt-dis-total) ; Total wh discharged
 (get-bms-val 'bms-msg-age) ; Age of last message from BMS in seconds
 (get-bms-val 'bms-chg-allowed) ; Charging allowed (Added in 6.05, Express only)
+(get-bms-val 'bms-data-version) ; Data version (added in 6.06)
 ```
 
 **Note**  
-In firmware 6.06 the following temperature sensor convention was introduced for bms-temps-adc. So when using (get-bms-val 'bms-temps-adc 2) the maximum cell temperature should be returned. If a temperature returns less than -280 degC that reading is not applicable on that BMS. Keep in mind that it will take some time before all BMSes follow this convention after the 6.06 release.
+In firmware 6.06 the following temperature sensor convention was introduced for bms-temps-adc. So when using (get-bms-val 'bms-temps-adc 2) the maximum cell temperature should be returned. If a temperature returns less than -280 degC that reading is not applicable on that BMS. Keep in mind that it will take some time before all BMSes follow this convention after the 6.06 release. (get-bms-val 'bms-data-version) should return 1 if this convention is used.
 
 | Sensor Index | Function |
 |---|---|
@@ -293,7 +294,8 @@ In firmware 6.06 the following temperature sensor convention was introduced for 
 | 1 | Cell Min |
 | 2 | Cell Max |
 | 3 | Mosfet Switch |
-| 4+ | Optional sensors |
+| 4 | Ambient Temperature |
+| 5+ | Optional sensors |
 
 ---
 
@@ -3909,7 +3911,7 @@ Get all overridden current limits from speed, temperature, voltage, wattage etc.
 
 ### EEPROM (Nonvolatile Storage)
 
-Up to 128 variables (int32 or float) can be stored in a nonvolatile memory reserved for LispBM. These variables persist between power cycles and configuration changes, but not between firmware updates. Keep in mind that the motor will be stopped briefly when writing them and that they only can be written a limited number of times (about 100 000 writes) before wear on the flash memory starts to become an issue.
+Up to 128 (256 in FW 6.06) variables (int32 or float) can be stored in a nonvolatile memory reserved for LispBM. These variables persist between power cycles and configuration changes, but not between firmware updates. Keep in mind that the motor will be stopped briefly when writing them and that they only can be written a limited number of times (about 100 000 writes) before wear on the flash memory starts to become an issue.
 
 ---
 
