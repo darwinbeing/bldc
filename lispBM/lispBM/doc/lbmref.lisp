@@ -1005,6 +1005,23 @@
 
 ;; Built-in operations
 
+(define built-in-identity
+  (ref-entry "identity"
+             (list
+              (para (list "The identity function takes one argument which it directly returns."
+                          "The form of an `identity` expression is `(identity expr)`, where expr is an arbitrary lisp expression."
+                          "`(identity expr)` is a function application so all normal function application rules apply."
+                          "The most important property of function applications in this case is that the argument is evaluated which"
+                          "differentiates `identity` from `quote` which returns the argument unevaluated."
+                          ))
+              (code '((identity 1)
+                      (identity (+ 1 2))
+                      (identity 'apa)
+                      (identity 'kurt-russel)
+                      (identity '(+ 1 2))
+                      ))
+              end)))
+
 (define built-in-eval
   (ref-entry "eval"
              (list
@@ -1178,6 +1195,7 @@
 (define built-ins
   (section 2 "Built-in operations"
            (list 'hline
+                 built-in-identity
                  built-in-rest-args
                  built-in-eval
                  built-in-eval-program
@@ -2405,9 +2423,8 @@
                           ))
               (program '(((send (self) 28)
                           (recv-to 0.1
-                                   ((? n) (+ n 1))
-                                   (timeout 'no-message))
-
+                                   (timeout 'no-message)
+                                   ((? n) (+ n 1)))
                           )
                          ))
               (program '(((send (self) 'not-foo)
@@ -2591,22 +2608,22 @@
                         "which will allow some pretty arbitrary control flow."
                         ))
             (para (list "The example below creates a macro for a `progn` facility that"
-                        "allows returning at an arbitrary point.\n"
+                        "allows returning at an arbitrary point.\n\n"
                         "```clj\n"
                         "(define do (macro (body)\n"
                         "                  `(call-cc (lambda (return) (progn ,@body)))))\n"
-                        "```\n"
+                        "```\n\n"
                         "The example using `do` below makes use of `print` which is not a"
                         "built-in feature of lispBM. There are just to many different ways a programmer may"
                         "want to implement `print` on an microcontroller. Use the lispBM extensions"
-                        "framework to implement your own version of `print`\n"
+                        "framework to implement your own version of `print`\n\n"
                         "```clj\n"
                         "(do ((print 10)\n"
                         "     (return 't)\n"
                         "     (print 20)))\n"
-                        "```\n"
+                        "```\n\n"
                         "In the example above only \"10\" will be printed."
-                        "Below is an example that conditionally returns.\n"
+                        "Below is an example that conditionally returns.\n\n"
                         "```clj\n"
                         "(define f (lambda (x)\n"
                         "            (do ((print \"hello world\")\n"
@@ -2614,10 +2631,30 @@
                         "                     (return 't)\n"
                         "                     nil)\n"
                         "                 (print \"Gizmo!\")))))\n"
-                        "```\n"
+                        "```\n\n"
                         ))
-            )
+                  
+            (ref-entry "call-cc"
+                       (list
+                        (para (list "The form of a `call-cc` expression is `(call-cc f)`, where f is a function taking a continuation k."
+                                    "In code most uses of call-cc will have the form `(call-cc (lambda (k) expr ))`."
+                                    "When using `call-cc` the expr above is allowed to bind `k` to a global variable."
+                                    ))
+                        )
+                       )           
+           (ref-entry "call-cc-unsafe"
+                      (list
+                       (para (list "`call-cc-unsafe` is similar to `call-cc` in form. `(call-cc-unsafe f)`"
+                                   "and in code usually as `(call-cc-unsafe (lambda (k) expr))`."
+                                   "When using call-cc-unsafe you must NOT let the `k` leak out of the scope created"
+                                   "by the enclosing `call-cc-unsafe`! That is, if `k` is used at all, it must be within `expr`."
+                                   "Binding `k` (directly or indirectly) to a global is a violation of the trust I am putting in you."
+                                   ))
+                       )
+                      )
            ))
+  )
+
 
 ;; Error handling
 

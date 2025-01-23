@@ -1,5 +1,5 @@
 /*
-    Copyright 2018, 2020, 2021, 2022 Joel Svensson  svenssonjoel@yahoo.se
+    Copyright 2018, 2020 - 2025 Joel Svensson  svenssonjoel@yahoo.se
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -330,6 +330,10 @@ void lbm_toggle_verbose(void);
  * \param verbose Boolean to turn verbose errors on or off.
  */
 void lbm_set_verbose(bool verbose);
+/** Hide error messages for trapped errors
+ * \param hide true to hide error messages when trapped.
+ */
+void lbm_set_hide_trapped_error(bool hide);
 /** Set a usleep callback for use by the evaluator thread.
  *
  * \param fptr Pointer to a sleep function.
@@ -367,7 +371,10 @@ lbm_cid lbm_get_current_cid(void);
  * a guarantee that a context is running
  */
 eval_context_t *lbm_get_current_context(void);
-
+/** Surrenders remaining eval quota.
+ *  Call this from extensions that takes non-trivial amounts of time.
+ */
+void lbm_surrender_quota(void);
 /** Change the mailbox size for a given context.
  * \param ctx The context to change mailbox size for.
  * \param new_size The new size of the mailbox.
@@ -375,6 +382,12 @@ eval_context_t *lbm_get_current_context(void);
  */
 bool lbm_mailbox_change_size(eval_context_t *ctx, lbm_uint new_size);
 
+/** Create a string channel from a C string. 
+ * \param str Zero terminated C string.
+ * \param res Resulting string channel.
+ * \param dep Dependency that must be kept alive for as long as string channel is alive.
+ * \ return true on success and false otherwise. 
+ */
 bool create_string_channel(char *str, lbm_value *res, lbm_value dep);
 
 bool lift_char_channel(lbm_char_channel_t *ch, lbm_value *res);

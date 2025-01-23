@@ -33,17 +33,18 @@
 #include "lbm_prof.h"
 #include "utils.h"
 
-#define LBM_MEMORY_SIZE_18K LBM_MEMORY_SIZE_64BYTES_TIMES_X(256 + 32)
-#define LBM_MEMORY_BITMAP_SIZE_18K LBM_MEMORY_BITMAP_SIZE(256 + 32)
+#define LBM_MEMORY_SIZE_28K LBM_MEMORY_SIZE_64BYTES_TIMES_X(448)
+#define LBM_MEMORY_BITMAP_SIZE_28K LBM_MEMORY_BITMAP_SIZE(448)
 
-#define HEAP_SIZE					(2048 + 256 + 160)
-#define LISP_MEM_SIZE				LBM_MEMORY_SIZE_18K
-#define LISP_MEM_BITMAP_SIZE		LBM_MEMORY_BITMAP_SIZE_18K
+#ifndef EXTENSION_STORAGE_SIZE
+#define EXTENSION_STORAGE_SIZE		300
+#endif
+
+#define HEAP_SIZE					(((1024 * 24) - (EXTENSION_STORAGE_SIZE * sizeof(lbm_extension_t))) / sizeof(lbm_cons_t))
+#define LISP_MEM_SIZE				LBM_MEMORY_SIZE_28K
+#define LISP_MEM_BITMAP_SIZE		LBM_MEMORY_BITMAP_SIZE_28K
 #define GC_STACK_SIZE				160
 #define PRINT_STACK_SIZE			128
-#ifndef EXTENSION_STORAGE_SIZE
-	#define EXTENSION_STORAGE_SIZE		298
-#endif
 #define EXT_LOAD_CALLBACK_LEN		20
 #define PROF_DATA_NUM				30
 
@@ -66,7 +67,7 @@ static lbm_uint const_heap_max_ind = 0;
 
 static thread_t *eval_tp = 0;
 static THD_FUNCTION(eval_thread, arg);
-static THD_WORKING_AREA(eval_thread_wa, 2048);
+__attribute__((section(".ram4"))) static THD_WORKING_AREA(eval_thread_wa, 2048);
 static volatile bool lisp_thd_running = false;
 static mutex_t lbm_mutex;
 
@@ -337,6 +338,7 @@ void lispif_process_cmd(unsigned char *data, unsigned int len,
 				commands_printf_lisp("Recovered arrays: %u\n", lbm_heap_state.gc_recovered_arrays);
 				commands_printf_lisp("Marked: %d\n", lbm_heap_state.gc_marked);
 				commands_printf_lisp("GC SP max: %u (size %u)\n", lbm_get_max_stack(&lbm_heap_state.gc_stack), lbm_heap_state.gc_stack.size);
+				commands_printf_lisp("Global env cells: %u\n", lbm_get_global_env_size());
 				commands_printf_lisp("--(Symbol and Array memory)--\n");
 				commands_printf_lisp("Memory size: %u bytes\n", lbm_memory_num_words() * 4);
 				commands_printf_lisp("Memory free: %u bytes\n", lbm_memory_num_free() * 4);
@@ -701,8 +703,6 @@ bool lispif_restart(bool print, bool load_code, bool load_imports) {
 
 			ext_load_callbacks[i]();
 		}
-
-		lbm_set_dynamic_load_callback(lispif_vesc_dynamic_loader);
 
 		int code_chars = 0;
 		if (code_data) {

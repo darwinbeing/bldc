@@ -81,6 +81,7 @@ special_sym const special_symbols[] =  {
   {"trap"         , SYM_TRAP},
   {"rest-args"    , SYM_REST_ARGS},
   {"rotate"       , SYM_ROTATE},
+  {"call-cc-unsafe", SYM_CALL_CC_UNSAFE},
 
   // pattern matching
   {"?"          , SYM_MATCH_ANY},
@@ -245,6 +246,7 @@ special_sym const special_symbols[] =  {
   {"type-f32"       , SYM_TYPE_FLOAT},
   {"type-f64"       , SYM_TYPE_DOUBLE},
   {"array-create"   , SYM_BYTEARRAY_CREATE},
+  {"identity"       , SYM_IDENTITY},
 };
 
 static lbm_uint *symlist = NULL;

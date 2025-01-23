@@ -311,6 +311,8 @@ typedef struct {
 	float pressure;
 	float hum;
 	float temp_max_cell;
+	float v_cell_min;
+	float v_cell_max;
 	float soc;
 	float soh;
 	int can_id;
@@ -318,6 +320,10 @@ typedef struct {
 	float wh_cnt_chg_total;
 	float ah_cnt_dis_total;
 	float wh_cnt_dis_total;
+	int is_charging;
+	int is_balancing;
+	int is_charge_allowed;
+	int data_version;
 	systime_t update_time;
 } bms_values;
 
@@ -332,6 +338,7 @@ typedef struct {
 	bool is_charging;
 	bool is_balancing;
 	bool is_charge_allowed;
+	int data_version;
 } bms_soc_soh_temp_stat;
 
 typedef enum {
@@ -1108,6 +1115,8 @@ typedef enum {
 	//COMM_PINLOCK3							= 155,
 
 	COMM_SHUTDOWN							= 156,
+	
+	COMM_FW_INFO							= 157,
 } COMM_PACKET_ID;
 
 // CAN commands
@@ -1376,7 +1385,7 @@ typedef union {
 } eeprom_var;
 
 #define EEPROM_VARS_HW			32
-#define EEPROM_VARS_CUSTOM		128
+#define EEPROM_VARS_CUSTOM		256
 
 typedef struct {
 	float ah_tot;
