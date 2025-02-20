@@ -2,33 +2,33 @@
 
 echo "BUILDING"
 
-rm -f test_lisp_code_cps_64
-make test_lisp_code_cps_64
+rm -f test_lisp_code_cps_time
+make test_lisp_code_cps_time
 
 
 date=$(date +"%Y-%m-%d_%H-%M")
-logfile="log_64_${date}.log"
+logfile="log_sch_time${date}.log"
 
 if [ -n "$1" ]; then
    logfile=$1
 fi
 
-echo "PERFORMING 64BIT TESTS: " $date
+echo "PERFORMING 32BIT TESTS: " $date
 
-
-expected_fails=("test_lisp_code_cps_64 -h 1024 tests/test_take_iota_0.lisp"
-                "test_lisp_code_cps_64 -s -h 1024 tests/test_take_iota_0.lisp"
-                "test_lisp_code_cps_64 -h 512 tests/test_take_iota_0.lisp"
-                "test_lisp_code_cps_64 -s -h 512 tests/test_take_iota_0.lisp"
-                "test_lisp_code_cps_64 -i -h 1024 tests/test_take_iota_0.lisp"
-                "test_lisp_code_cps_64 -i -s -h 1024 tests/test_take_iota_0.lisp"
-                "test_lisp_code_cps_64 -i -h 512 tests/test_take_iota_0.lisp"
-                "test_lisp_code_cps_64 -i -s -h 512 tests/test_take_iota_0.lisp"
-		"test_lisp_code_cps_64 -h 512 tests/test_match_stress_2.lisp"
-		"test_lisp_code_cps_64 -i -h 512 tests/test_match_stress_2.lisp"
-		"test_lisp_code_cps_64 -s -h 512 tests/test_match_stress_2.lisp"
-		"test_lisp_code_cps_64 -i -s -h 512 tests/test_match_stress_2.lisp"
+expected_fails=("test_lisp_code_cps_time -h 1024 tests/test_take_iota_0.lisp"
+                "test_lisp_code_cps_time -s -h 1024 tests/test_take_iota_0.lisp"
+                "test_lisp_code_cps_time -h 512 tests/test_take_iota_0.lisp"
+                "test_lisp_code_cps_time -s -h 512 tests/test_take_iota_0.lisp"
+                "test_lisp_code_cps_time -i -h 1024 tests/test_take_iota_0.lisp"
+                "test_lisp_code_cps_time -i -s -h 1024 tests/test_take_iota_0.lisp"
+                "test_lisp_code_cps_time -i -h 512 tests/test_take_iota_0.lisp"
+                "test_lisp_code_cps_time -i -s -h 512 tests/test_take_iota_0.lisp"
+		"test_lisp_code_cps_time -h 512 tests/test_match_stress_2.lisp"
+		"test_lisp_code_cps_time -i -h 512 tests/test_match_stress_2.lisp"
+		"test_lisp_code_cps_time -s -h 512 tests/test_match_stress_2.lisp"
+		"test_lisp_code_cps_time -i -s -h 512 tests/test_match_stress_2.lisp"
               )
+
 
 success_count=0
 fail_count=0
@@ -65,11 +65,10 @@ test_config=("-h 32768"
               "-i -s -h 512")
 
 for conf in "${test_config[@]}" ; do
-    expected_fails+=("test_lisp_code_cps_64 $conf tests/test_is_32bit.lisp")
+    expected_fails+=("test_lisp_code_cps_time $conf tests/test_is_64bit.lisp")
 done
 
-
-for prg in "test_lisp_code_cps_64" ; do
+for prg in "test_lisp_code_cps_time" ; do
     for arg in "${test_config[@]}"; do
         echo "Configuration: " $arg
         for lisp in tests/*.lisp; do
@@ -90,8 +89,6 @@ for prg in "test_lisp_code_cps_64" ; do
         done
     done
 done
-
-# echo -e $failing_tests
 
 expected_count=0
 
