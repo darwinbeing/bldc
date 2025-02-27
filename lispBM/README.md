@@ -14,23 +14,31 @@ This is the VESC-integration of [lispBM](https://github.com/svenssonjoel/lispBM)
 
 [LispBM Language Reference](lispBM/doc/lbmref.md)
 
-## Programming Manual
+The language reference is probably the most important document to read when working with with LBM. It describes the concepts of the language and, importantly, all basic functions it provides for various operations.
 
-This is the work-in-progress programming manual for LispBM. Note that the examples in the manual use the REPL quite a lot. All of them also work in the VESC Tool REPL (which is below the console below the code editor) when you are connected to a VESC and will be executed on the VESC itself. The results of the commands will be printed in the console. From the VESC Tool REPL you also have access to all functions and variables in the program that you have uploaded.
+**Libraries**  
 
-[Chapter 1: Introduction to programming in LispBM](lispBM/doc/manual/ch1_introduction.md)  
-[Chapter 2: List Processing](lispBM/doc/manual/ch2_list_processing.md)  
-[Chapter 3: Concurrency](lispBM/doc/manual/ch3_concurrency.md)
+[Libraries](lispBM/doc/dynref.md)
+
+Most of these are available on ESC and Express. They are loaded dynamically when used the first time.
+
+**LBM Gotchas and Caveats**
+
+[Gotchas](lispBM/doc/gotchas.md)
 
 ## VESC Express Libraries
 
 The VESC Express has some extra libraries that are documented in separate documents.
 
-**VESC Express Display Driver**  
+**Display Driver**  
 
-[VESC Express Display Driver](https://github.com/vedderb/vesc_express/blob/main/main/display/README.md)
+[Display Driver](lispBM/doc/displayref.md)
 
 The display driver allows driving many common displays using SPI, such as the ST7789, ST7735, ILI9341, ILI9488, SH8501, SSD1306 and SSD1351. There are accelerated rendering and font extensions that can be used from LispBM.  
+
+**TTF Font Renderer for Display Driver**  
+
+[TTF Font Renderer](lispBM/doc/ttfref.md)
 
 **VESC Express Wifi and TCP**  
 
