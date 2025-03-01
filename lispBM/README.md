@@ -1205,6 +1205,20 @@ Run FOC in open loop. Useful to test thermal properties of motors and power stag
 
 ---
 
+#### foc-openloop-phase
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 6.06+ |
+
+```clj
+(foc-openloop-phase current phase)
+```
+
+Run FOC in open loop in phase mode. Phase is the electrical position of the openloop-vector in degrees, range 0.0 to 360.0.
+
+---
+
 #### foc-beep
 
 | Platforms | Firmware |
@@ -3766,6 +3780,8 @@ The following selection of app and motor parameters can be read and set from Lis
                         ; 4: 10K
                         ; 5: 20K
                         ; 6: 50K
+                        ; 7: 75K
+                        ; 8: 100K
 'can-status-rate-hz     ; CAN status message rate
 'wifi-mode              ; Wifi mode
                         ; 0: Disabled
@@ -3788,6 +3804,8 @@ The following selection of app and motor parameters can be read and set from Lis
                         ; 3: Enabled with scripting
 'ble-name               ; Device name (also the name that shows up in VESC Tool)
 'ble-pin                ; BLE pin code
+'ble-service-capacity   ; BLE Service Capacity
+'ble-chr-descr-capacity ; BLE Characteristics and Descriptor Capacity
 ```
 
 ---
