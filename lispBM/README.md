@@ -14,23 +14,31 @@ This is the VESC-integration of [lispBM](https://github.com/svenssonjoel/lispBM)
 
 [LispBM Language Reference](lispBM/doc/lbmref.md)
 
-## Programming Manual
+The language reference is probably the most important document to read when working with with LBM. It describes the concepts of the language and, importantly, all basic functions it provides for various operations.
 
-This is the work-in-progress programming manual for LispBM. Note that the examples in the manual use the REPL quite a lot. All of them also work in the VESC Tool REPL (which is below the console below the code editor) when you are connected to a VESC and will be executed on the VESC itself. The results of the commands will be printed in the console. From the VESC Tool REPL you also have access to all functions and variables in the program that you have uploaded.
+**Libraries**  
 
-[Chapter 1: Introduction to programming in LispBM](lispBM/doc/manual/ch1_introduction.md)  
-[Chapter 2: List Processing](lispBM/doc/manual/ch2_list_processing.md)  
-[Chapter 3: Concurrency](lispBM/doc/manual/ch3_concurrency.md)
+[Libraries](lispBM/doc/dynref.md)
+
+Most of these are available on ESC and Express. They are loaded dynamically when used the first time.
+
+**LBM Gotchas and Caveats**
+
+[Gotchas](lispBM/doc/gotchas.md)
 
 ## VESC Express Libraries
 
 The VESC Express has some extra libraries that are documented in separate documents.
 
-**VESC Express Display Driver**  
+**Display Driver**  
 
-[VESC Express Display Driver](https://github.com/vedderb/vesc_express/blob/main/main/display/README.md)
+[Display Driver](lispBM/doc/displayref.md)
 
 The display driver allows driving many common displays using SPI, such as the ST7789, ST7735, ILI9341, ILI9488, SH8501, SSD1306 and SSD1351. There are accelerated rendering and font extensions that can be used from LispBM.  
+
+**TTF Font Renderer for Display Driver**  
+
+[TTF Font Renderer](lispBM/doc/ttfref.md)
 
 **VESC Express Wifi and TCP**  
 
@@ -297,6 +305,7 @@ Get value from BMS. Examples:
 (get-bms-val 'bms-msg-age) ; Age of last message from BMS in seconds
 (get-bms-val 'bms-chg-allowed) ; Charging allowed (Added in 6.05, Express only)
 (get-bms-val 'bms-data-version) ; Data version (added in 6.06)
+(get-bms-val 'bms-status) ; Status string (added in 6.06)
 ```
 
 **Note**  
@@ -1193,6 +1202,20 @@ Position control. Set motor position in degrees, range 0.0 to 360.0.
 ```
 
 Run FOC in open loop. Useful to test thermal properties of motors and power stages.
+
+---
+
+#### foc-openloop-phase
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 6.06+ |
+
+```clj
+(foc-openloop-phase current phase)
+```
+
+Run FOC in open loop in phase mode. Phase is the electrical position of the openloop-vector in degrees, range 0.0 to 360.0.
 
 ---
 
@@ -3757,6 +3780,8 @@ The following selection of app and motor parameters can be read and set from Lis
                         ; 4: 10K
                         ; 5: 20K
                         ; 6: 50K
+                        ; 7: 75K
+                        ; 8: 100K
 'can-status-rate-hz     ; CAN status message rate
 'wifi-mode              ; Wifi mode
                         ; 0: Disabled
@@ -3779,6 +3804,8 @@ The following selection of app and motor parameters can be read and set from Lis
                         ; 3: Enabled with scripting
 'ble-name               ; Device name (also the name that shows up in VESC Tool)
 'ble-pin                ; BLE pin code
+'ble-service-capacity   ; BLE Service Capacity
+'ble-chr-descr-capacity ; BLE Characteristics and Descriptor Capacity
 ```
 
 ---
