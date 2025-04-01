@@ -4023,6 +4023,27 @@ Run FOC DC offset calibration. calUndriven can be set to true for including the 
 (i0 i1 i2 v0 v1 v2 v0-undriven v1-undriven v2-undriven)
 ```
 
+Since firmware 6.06 the argument calUndriven can be omitted. When it is omitted no calibration is done and the offsets in use are returned.
+
+---
+
+#### conf-dc-cal-set
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 6.06+ |
+
+```clj
+(conf-dc-cal-set i0 i1 i2 v0 v1 v2 v0-undriven v1-undriven v2-undriven)
+```
+
+Manually set the offsets on the selected motor. Arguments that are set to nil will leave the corresponding offset unchanged. If not all arguments are given the ones left out will not be updated. Example:
+
+```clj
+; Set the i2-offset to 1.1 ADC counts and the v2-offset to 2.3 V. Leave the rest unchanged.
+(conf-dc-cal-set nil nil 1.1 nil nil 2.3)
+```
+
 ---
 
 #### conf-get-limits
@@ -5156,6 +5177,20 @@ for details.
 
 **event-esp-now-rx**  
 This event is sent when ESP-NOW data is received.
+
+---
+
+#### event-enable
+
+| Platforms | Firmware |
+|---|---|
+| ESC, Express | 6.00+ |
+
+```clj
+(event-enable event optEn)
+```
+
+Enable or disable event. The optional argument optEn can be set to 1 to enable the event or to 0 to disable it. If optEn is left out the event will be enabled.
 
 ---
 
