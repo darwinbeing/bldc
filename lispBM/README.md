@@ -1231,6 +1231,20 @@ Run FOC in open loop in phase mode. Phase is the electrical position of the open
 
 ---
 
+#### set-kill-sw
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 6.06+ |
+
+```clj
+(set-kill-sw state)
+```
+
+Set kill switch state. When state is set to 1 the motor is disabled and optionally braking if timeout_brake_current is greater than 0. The kill switch overrides all other inputs and can be used as an emergency stop. The kill switch state here is applied as logic OR with the app settings kill switch input, so as long as any of them is active the motor will be disabled.
+
+---
+
 #### foc-beep
 
 | Platforms | Firmware |
@@ -6602,7 +6616,20 @@ Disconnect SD-card or NAND-Flash.
 (f-open path mode)
 ```
 
-Open a file in open-mode mode (r, w or rw). Returns a number that can be used as a handle to the file on success or nil if the file could not be opened. Example:
+Open a file in open-mode mode (r, w, a, r+, w+ and a+). Returns a number that can be used as a handle to the file on success or nil if the file could not be opened.
+
+The modes mean the following
+
+| Mode | Description |
+|---|---|
+| r | Open for reading. The file must exist. |
+| w | Open for writing. Creates an empty file or truncates an existing file. |
+| a | Open for appending. Writes data at the end of the file. Creates the file if it does not exist. |
+| r+ | Open for reading and writing. The file must exist. |
+| w+ | Open for reading and writing. Creates an empty file or truncates an existing file. |
+| a+ | Open for reading and appending. The file is created if it does not exist. |
+
+Example:
 
 ```clj
 (def f (f-open "test.txt" "w")) ; Open test.txt in write-only mode and store the handle as f.
