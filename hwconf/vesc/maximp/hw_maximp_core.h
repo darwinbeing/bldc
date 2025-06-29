@@ -88,17 +88,6 @@
 #define REG_5V_ON()				palSetPad(REG_5V_GPIO, REG_5V_PIN)
 #define REG_5V_OFF()			palClearPad(REG_5V_GPIO, REG_5V_PIN)
 
-// Shutdown pin
-#define HW_SHUTDOWN_GPIO		GPIOC
-#define HW_SHUTDOWN_PIN			5
-#define HW_SHUTDOWN_HOLD_ON()	palSetPad(HW_SHUTDOWN_GPIO, HW_SHUTDOWN_PIN)
-#define HW_SHUTDOWN_HOLD_OFF()	palClearPad(HW_SHUTDOWN_GPIO, HW_SHUTDOWN_PIN)
-#define HW_SAMPLE_SHUTDOWN()	hw_sample_shutdown_button()
-
-// Hold shutdown pin early to wake up on short pulses
-#define HW_EARLY_INIT()			palSetPadMode(HW_SHUTDOWN_GPIO, HW_SHUTDOWN_PIN, PAL_MODE_OUTPUT_PUSHPULL); \
-								HW_SHUTDOWN_HOLD_ON();
-
 #define MCPWM_FOC_CURRENT_SAMP_OFFSET				(2) // Offset from timer top for ADC samples
 
 /*
@@ -181,6 +170,10 @@
 #define HW_ADC_EXT_PIN			7
 #define HW_ADC_EXT2_GPIO		GPIOA
 #define HW_ADC_EXT2_PIN			6
+#define HW_ADC_EXT3_GPIO		GPIOA
+#define HW_ADC_EXT3_PIN			3
+#define HW_ADC_EXT4_GPIO		GPIOC
+#define HW_ADC_EXT4_PIN			4
 
 // UART Peripheral
 #define HW_UART_DEV				SD3
@@ -268,7 +261,7 @@
 #define READ_HALL2()			palReadPad(HW_HALL_ENC_GPIO2, HW_HALL_ENC_PIN2)
 #define READ_HALL3()			palReadPad(HW_HALL_ENC_GPIO3, HW_HALL_ENC_PIN3)
 
-#define HW_DEAD_TIME_NSEC		800.0
+#define HW_DEAD_TIME_NSEC		600.0
 
 // Default setting overrides
 #ifndef MCCONF_L_MIN_VOLTAGE
@@ -276,11 +269,11 @@
 #endif
 #ifdef HWMAXIMP_120
 #ifndef MCCONF_L_MAX_VOLTAGE
-#define MCCONF_L_MAX_VOLTAGE			140.0	// Maximum input voltage
+#define MCCONF_L_MAX_VOLTAGE			112.0	// Maximum input voltage
 #endif
 #else
 #ifndef MCCONF_L_MAX_VOLTAGE
-#define MCCONF_L_MAX_VOLTAGE			112.0	// Maximum input voltage
+#define MCCONF_L_MAX_VOLTAGE			140.0	// Maximum input voltage
 #endif
 #endif
 #ifndef MCCONF_DEFAULT_MOTOR_TYPE

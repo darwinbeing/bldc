@@ -178,6 +178,10 @@
 #define HW_ADC_EXT_PIN			7
 #define HW_ADC_EXT2_GPIO		GPIOA
 #define HW_ADC_EXT2_PIN			6
+#define HW_ADC_EXT3_GPIO		GPIOA
+#define HW_ADC_EXT3_PIN			3
+#define HW_ADC_EXT4_GPIO		GPIOC
+#define HW_ADC_EXT4_PIN			4
 
 // UART Peripheral
 #define HW_UART_DEV				SD3
@@ -266,7 +270,7 @@
 #define READ_HALL3()			palReadPad(HW_HALL_ENC_GPIO3, HW_HALL_ENC_PIN3)
 
 // Override dead time. See the stm32f4 reference manual for calculating this value.
-#define HW_DEAD_TIME_NSEC		600.0
+#define HW_DEAD_TIME_NSEC		500.0
 
 // Default setting overrides
 #ifndef MCCONF_L_MIN_VOLTAGE
@@ -305,8 +309,8 @@
 
 // Setting limits
 #ifdef HWMAXIM_120
-#define HW_LIM_CURRENT			-600.0, 600.0
-#define HW_LIM_CURRENT_IN		-600.0, 600.0
+#define HW_LIM_CURRENT			-650.0, 650.0
+#define HW_LIM_CURRENT_IN		-650.0, 650.0
 #define HW_LIM_CURRENT_ABS		0.0, 900.0
 #define HW_LIM_VIN				20.0, 115.0
 #else
