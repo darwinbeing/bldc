@@ -3674,8 +3674,8 @@ The following selection of app and motor parameters can be read and set from Lis
 'foc-encoder-inverted   ; Encoder vs motor direction inverted (FW 6.06+)
 'foc-encoder-ratio      ; Ratio between electrical and encoder turns (FW 6.06+)
 'm-ntc-motor-beta       ; Beta Value for Motor Thermistor
-'m_encoder_counts       ; ABI encoder counts (FW 6.06)
-'m_sensor_port_mode     ; Sensor port mode (FW 6.06)
+'m-encoder-counts       ; ABI encoder counts (FW 6.06)
+'m-sensor-port-mode     ; Sensor port mode (FW 6.06)
                         ;    0: SENSOR_PORT_MODE_HALL
                         ;    1: SENSOR_PORT_MODE_ABI
                         ;    2: SENSOR_PORT_MODE_AS5047_SPI
@@ -3704,10 +3704,22 @@ The following selection of app and motor parameters can be read and set from Lis
 'foc-motor-r            ; Motor resistance in milliOhm
 'foc-motor-flux-linkage ; Motor flux linkage in milliWeber
 'foc-observer-gain      ; Observer gain x1M
+'foc-observer-type      ; Observer type (FW 6.06)
+                        ;    0 : FOC_OBSERVER_ORTEGA_ORIGINAL
+                        ;    1 : FOC_OBSERVER_MXLEMMING
+                        ;    2 : FOC_OBSERVER_ORTEGA_LAMBDA_COMP
+                        ;    3 : FOC_OBSERVER_MXLEMMING_LAMBDA_COMP
+                        ;    4 : FOC_OBSERVER_MXV
+                        ;    5 : FOC_OBSERVER_MXV_LAMBDA_COMP
+                        ;    6 : FOC_OBSERVER_MXV_LAMBDA_COMP
+'foc-mtpa-mode          ; Maximum Torque per Amp (MTPA) Mode (FW 6.06)
+                        ;    0 : MTPA_MODE_OFF
+                        ;    1 : MTPA_MODE_IQ_TARGET
+                        ;    2 : MTPA_MODE_IQ_MEASURED
 'foc-hfi-amb-mode       ; HFI Ambiguity Resolve Mode (FW 6.06)
-                        ; 0 : Six Vector
-                        ; 1 : ID Single Pulse
-                        ; 2 : ID Double Pulse
+                        ;    0 : Six Vector
+                        ;    1 : ID Single Pulse
+                        ;    2 : ID Double Pulse
 'foc-hfi-amb-current    ; HFI Ambiguity Resolve Current (FW 6.06)
 'foc-hfi-amb-tres       ; HFI Ambiguity Resolve Threshold (FW 6.06)
 'foc-hfi-voltage-start  ; HFI start voltage (V) (for resolving ambiguity)
