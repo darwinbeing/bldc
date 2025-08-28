@@ -2482,12 +2482,18 @@ Example:
 
 ```clj
 ; Configuration update on ID54:
-(can-cmd 54 "(conf-set max-speed 10.0)")
+(can-cmd 54 "(conf-set 'max-speed 10.0)")
 
 ; The string-functions can be used for setting something from a variable
 (def max-speed-kmh 25.0)
 (can-cmd 54 (str-from-n (/ max-speed-kmh 3.6) "(conf-set 'max-speed %.3f)"))
 ```
+  
+**Note**  
+can-cmd is limited to two commands per second per device. If commands are sent more often that that they are ignored.  
+  
+**Note2**  
+A better way to achieve something similar to can-cmd but with much less overhead and unlimited rate is using the [Code Server](https://github.com/vedderb/vesc_pkg/tree/main/lib_code_server) library.
 
 ---
 
@@ -6707,7 +6713,10 @@ When a SD-card is present in the VESC Express files can be listed, read, written
 (f-connect pin-mosi pin-miso pin-sck pin-cs optSpiSpeed)
 ```
 
-Connect SD-card on pin-mosi, pin-miso, pin-sck and pin-cs. The optional argument optSpiSpeed can be used to specify the SPI speed (default 20000 Hz). Returns true on success, nil otherwise.
+Connect SD-card on pin-mosi, pin-miso, pin-sck and pin-cs. The optional argument optSpiSpeed can be used to specify the SPI speed (default 20000 Hz). Returns true on success, nil otherwise.  
+  
+**NOTE**  
+This is only needed if you connect a memory card manually to hardware that does not come with one. Hardware such as the [VESC Nanolog](https://www.vesclabs.com/product/vl-nanolog/) already has the memory card connected and initialized, so you can use the file operations right away.
 
 ---
 
