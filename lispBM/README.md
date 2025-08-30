@@ -2482,12 +2482,18 @@ Example:
 
 ```clj
 ; Configuration update on ID54:
-(can-cmd 54 "(conf-set max-speed 10.0)")
+(can-cmd 54 "(conf-set 'max-speed 10.0)")
 
 ; The string-functions can be used for setting something from a variable
 (def max-speed-kmh 25.0)
 (can-cmd 54 (str-from-n (/ max-speed-kmh 3.6) "(conf-set 'max-speed %.3f)"))
 ```
+  
+**Note**  
+can-cmd is limited to two commands per second per device. If commands are sent more often that that they are ignored.  
+  
+**Note2**  
+A better way to achieve something similar to can-cmd but with much less overhead and unlimited rate is using the [Code Server](https://github.com/vedderb/vesc_pkg/tree/main/lib_code_server) library.
 
 ---
 
@@ -3674,8 +3680,11 @@ The following selection of app and motor parameters can be read and set from Lis
 'foc-encoder-inverted   ; Encoder vs motor direction inverted (FW 6.06+)
 'foc-encoder-ratio      ; Ratio between electrical and encoder turns (FW 6.06+)
 'm-ntc-motor-beta       ; Beta Value for Motor Thermistor
-'m_encoder_counts       ; ABI encoder counts (FW 6.06)
-'m_sensor_port_mode     ; Sensor port mode (FW 6.06)
+'m-ptc-motor-coeff      ; Coefficient for PTC Motor Thermistor. Unit: %/K (FW 6.06+)
+'m-ntcx-ptcx-temp-base  ; Resistance of custom NTC/PTC resistor. (FW 6.06+)
+'m-ntcx-ptcx-res        ; Base temperature of custom NTC/PTC resistor. (FW 6.06+)
+'m-encoder-counts       ; ABI encoder counts (FW 6.06)
+'m-sensor-port-mode     ; Sensor port mode (FW 6.06)
                         ;    0: SENSOR_PORT_MODE_HALL
                         ;    1: SENSOR_PORT_MODE_ABI
                         ;    2: SENSOR_PORT_MODE_AS5047_SPI
@@ -3704,10 +3713,22 @@ The following selection of app and motor parameters can be read and set from Lis
 'foc-motor-r            ; Motor resistance in milliOhm
 'foc-motor-flux-linkage ; Motor flux linkage in milliWeber
 'foc-observer-gain      ; Observer gain x1M
+'foc-observer-type      ; Observer type (FW 6.06)
+                        ;    0 : FOC_OBSERVER_ORTEGA_ORIGINAL
+                        ;    1 : FOC_OBSERVER_MXLEMMING
+                        ;    2 : FOC_OBSERVER_ORTEGA_LAMBDA_COMP
+                        ;    3 : FOC_OBSERVER_MXLEMMING_LAMBDA_COMP
+                        ;    4 : FOC_OBSERVER_MXV
+                        ;    5 : FOC_OBSERVER_MXV_LAMBDA_COMP
+                        ;    6 : FOC_OBSERVER_MXV_LAMBDA_COMP
+'foc-mtpa-mode          ; Maximum Torque per Amp (MTPA) Mode (FW 6.06)
+                        ;    0 : MTPA_MODE_OFF
+                        ;    1 : MTPA_MODE_IQ_TARGET
+                        ;    2 : MTPA_MODE_IQ_MEASURED
 'foc-hfi-amb-mode       ; HFI Ambiguity Resolve Mode (FW 6.06)
-                        ; 0 : Six Vector
-                        ; 1 : ID Single Pulse
-                        ; 2 : ID Double Pulse
+                        ;    0 : Six Vector
+                        ;    1 : ID Single Pulse
+                        ;    2 : ID Double Pulse
 'foc-hfi-amb-current    ; HFI Ambiguity Resolve Current (FW 6.06)
 'foc-hfi-amb-tres       ; HFI Ambiguity Resolve Threshold (FW 6.06)
 'foc-hfi-voltage-start  ; HFI start voltage (V) (for resolving ambiguity)
@@ -3739,6 +3760,7 @@ The following selection of app and motor parameters can be read and set from Lis
 'foc-fw-current-max     ; Maximum field weakening current (Added in FW 6.05)
 'foc-fw-duty-start      ; Duty where field weakening starts (Added in FW 6.05)
 'foc-short-ls-on-zero-duty ; Short low-side FETs on 0 duty (Added in FW 6.05)
+'foc-overmod-factor     ; FOC overmodulation factor (Added in FW 6.06)
 'min-speed              ; Minimum speed in meters per second (a negative value)
 'max-speed              ; Maximum speed in meters per second
 'app-to-use             ; App to use
@@ -4121,7 +4143,7 @@ Get all overridden current limits from speed, temperature, voltage, wattage etc.
 | ESC | 6.06+ |
 
 ```clj
-(conf-detect-lambda-enc current duty erpm-per-sec resistance-ohm inductance-uH)
+(conf-detect-lambda-enc current duty erpm-per-sec resistance-mOhm inductance-uH)
 ```
 
 Detect flux linkage as well as encoder parameters if an encoder is configured. The parameters are
@@ -4131,7 +4153,7 @@ Detect flux linkage as well as encoder parameters if an encoder is configured. T
 | current | Current to spin up the motor with. |
 | duty | Duty cycle to stop at. |
 | erpm-per-sec | Angular rate to spin up at in ERPM per second. |
-| resistance-ohm | Motor resistance in Ohm. Has to be measured before. |
+| resistance-mOhm | Motor resistance in milliohm. Has to be measured before. |
 | inductance-uH | Motor inductance in microhenry. Has to be measured before. |
 
 If the detection fails nil is returned. If a fault occurs during the detection the fault code is returned. Otherwise, the following list with the result is returned:
@@ -4154,7 +4176,7 @@ Where the result values are
 Example:
 
 ```clj
-(print (conf-detect-lambda-enc 40 0.3 1500 0.007 70))
+(print (conf-detect-lambda-enc 40 0.3 1500 7 70))
 -> (0.017543f32 0.018353f32 2000.000000f32 6.898595f32 4.000000f32 1)
 
 ; Use result of resistance and inductance measurement
@@ -6291,6 +6313,71 @@ The optional arguments optUartNum, optPinRx and optPinTx can be used to specify 
 
 ---
 
+#### nmea-parse
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.06+ |
+
+```clj
+(nmea-parse str)
+```
+
+Parse NMEA string and updates GNSS state. Supported strings are GGA, GPGSV, GLGSV and RMC. Other strings are ignored. Returns true when something was parsed, nil otherwise.
+
+All of the GNSS-extensions as well as the logging can take advantage of these updates. CAN-messages for GNSS position and time will also be sent out based on the updates.
+
+---
+
+#### set-pos-time
+
+| Platforms | Firmware |
+|---|---|
+| Express | 6.06+ |
+
+```clj
+(set-pos-time lat lon height speed hdop msToday year month day)
+```
+Update position, date and time state. All arguments are optional and nil can be passed for arguments that should not be updated.
+
+The arguments are interpreted as follows:
+
+| Name | Value |
+|---|---|
+| lat | Latitude in degrees |
+| lon | Longitude in degrees |
+| height | Altitude in meters |
+| speed | Ground speed in meters per second |
+| hdop | hdop-value of position |
+| msToday | Time today in milliseconds |
+| year | Year |
+| month | Month |
+| day | day |
+
+All of the GNSS-extensions as well as the logging can take advantage of these updates. CAN-messages for GNSS position and time will also be sent out based on the updates.
+
+Examples
+
+```clj
+(var hh 10)
+(var mm 25)
+(var ss 10)
+(var ms-today (+
+	(* hh 60 60 1000)
+	(* mm 60 1000)
+	(* ss 1000)
+))
+
+; Set time and data only
+(set-pos-time nil nil nil nil nil ms-today 2025 02 02)
+
+
+; Set position only
+(set-pos-time 57.623761 13.091890 10 0.0 2)
+```
+
+---
+
 ## Commands
 
 The VESC commands interface can be accessed from LispBM. This can be used to execute all commands supported by VESC Tool or to create a bridge to VESC Tool.
@@ -6307,7 +6394,7 @@ The VESC commands interface can be accessed from LispBM. This can be used to exe
 (cmds-start-stop optStart)
 ```
 
-Start or stop commands interface. The commands interface needs to be started for the extensions and related events to work. This will allocate around 1k of memory for the packet interface. When stopping the allocated memory will be freed. The optional argument optStart can be set to true for start or to false for stop. If it is left out the commands interface will be started.
+Start or stop commands interface. The commands interface needs to be started for the extensions and related events to work. This will allocate around 4k (Express) or 3k (ESC) of memory for the packet interface and for the commands processing thread stack. When stopping the allocated memory will be freed. The optional argument optStart can be set to true for start or to false for stop. If it is left out the commands interface will be started.
 
 ---
 
@@ -6321,7 +6408,7 @@ Start or stop commands interface. The commands interface needs to be started for
 (cmds-proc data)
 ```
 
-Process data byte array with the packet decoder. If a full command is decoded a C thread will be spawned that executes the command. If the command has a response to send this is done using the event-cmds-data-tx event. Spawning the thread will require around 2.6k of free memory (ESC) or 4k of memory (Express).
+Process data byte array with the packet decoder. If a full command is decoded a C thread will be spawned that executes the command. If the command has a response to send this is done using the event-cmds-data-tx event.
 
 The best way to illustrate how to use this is with an example. The following code uses TCP sockets on VESC Express to connect to the VESC TCP hub. VESC Tool can then connect to this express using the TCP Hub and run all commands as usual. It should be fairly simple to adapt this example to for example interface with an LTE modem.
 
@@ -6626,7 +6713,10 @@ When a SD-card is present in the VESC Express files can be listed, read, written
 (f-connect pin-mosi pin-miso pin-sck pin-cs optSpiSpeed)
 ```
 
-Connect SD-card on pin-mosi, pin-miso, pin-sck and pin-cs. The optional argument optSpiSpeed can be used to specify the SPI speed (default 20000 Hz). Returns true on success, nil otherwise.
+Connect SD-card on pin-mosi, pin-miso, pin-sck and pin-cs. The optional argument optSpiSpeed can be used to specify the SPI speed (default 20000 Hz). Returns true on success, nil otherwise.  
+  
+**NOTE**  
+This is only needed if you connect a memory card manually to hardware that does not come with one. Hardware such as the [VESC Nanolog](https://www.vesclabs.com/product/vl-nanolog/) already has the memory card connected and initialized, so you can use the file operations right away.
 
 ---
 

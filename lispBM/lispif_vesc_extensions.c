@@ -180,6 +180,8 @@ typedef struct {
 	lbm_uint foc_motor_r;
 	lbm_uint foc_motor_flux_linkage;
 	lbm_uint foc_observer_gain;
+	lbm_uint foc_observer_type;
+	lbm_uint foc_mtpa_mode;
 	lbm_uint foc_hfi_voltage_start;
 	lbm_uint foc_hfi_voltage_run;
 	lbm_uint foc_hfi_voltage_max;
@@ -205,10 +207,14 @@ typedef struct {
 	lbm_uint foc_fw_current_max;
 	lbm_uint foc_fw_duty_start;
 	lbm_uint foc_short_ls_on_zero_duty;
+	lbm_uint foc_overmod_factor;
 	lbm_uint m_invert_direction;
 	lbm_uint m_out_aux_mode;
 	lbm_uint m_motor_temp_sens_type;
 	lbm_uint m_ntc_motor_beta;
+	lbm_uint m_ptc_motor_coeff;
+	lbm_uint m_ntcx_ptcx_temp_base;
+	lbm_uint m_ntcx_ptcx_res;
 	lbm_uint m_encoder_counts;
 	lbm_uint m_sensor_port_mode;
 	lbm_uint si_motor_poles;
@@ -502,6 +508,10 @@ static bool compare_symbol(lbm_uint sym, lbm_uint *comp) {
 			lbm_add_symbol_const("foc-motor-flux-linkage", comp);
 		} else if (comp == &syms_vesc.foc_observer_gain) {
 			lbm_add_symbol_const("foc-observer-gain", comp);
+		} else if (comp == &syms_vesc.foc_observer_type) {
+			lbm_add_symbol_const("foc-observer-type", comp);
+		} else if (comp == &syms_vesc.foc_mtpa_mode) {
+			lbm_add_symbol_const("foc-mtpa-mode", comp);
 		} else if (comp == &syms_vesc.foc_hfi_voltage_start) {
 			lbm_add_symbol_const("foc-hfi-voltage-start", comp);
 		} else if (comp == &syms_vesc.foc_hfi_voltage_run) {
@@ -552,6 +562,8 @@ static bool compare_symbol(lbm_uint sym, lbm_uint *comp) {
 			lbm_add_symbol_const("foc-fw-duty-start", comp);
 		} else if (comp == &syms_vesc.foc_short_ls_on_zero_duty) {
 			lbm_add_symbol_const("foc-short-ls-on-zero-duty", comp);
+		} else if (comp == &syms_vesc.foc_overmod_factor) {
+			lbm_add_symbol_const("foc-overmod-factor", comp);
 		} else if (comp == &syms_vesc.m_invert_direction) {
 			lbm_add_symbol_const("m-invert-direction", comp);
 		} else if (comp == &syms_vesc.m_out_aux_mode) {
@@ -560,6 +572,12 @@ static bool compare_symbol(lbm_uint sym, lbm_uint *comp) {
 			lbm_add_symbol_const("m-motor-temp-sens-type", comp);
 		} else if (comp == &syms_vesc.m_ntc_motor_beta) {
 			lbm_add_symbol_const("m-ntc-motor-beta", comp);
+		} else if (comp == &syms_vesc.m_ptc_motor_coeff) {
+			lbm_add_symbol_const("m-ptc-motor-coeff", comp);
+		} else if (comp == &syms_vesc.m_ntcx_ptcx_temp_base) {
+			lbm_add_symbol_const("m-ntcx-ptcx-temp-base", comp);
+		} else if (comp == &syms_vesc.m_ntcx_ptcx_res) {
+			lbm_add_symbol_const("m-ntcx-ptcx-res", comp);
 		} else if (comp == &syms_vesc.m_encoder_counts) {
 			lbm_add_symbol_const("m-encoder-counts", comp);
 		} else if (comp == &syms_vesc.m_sensor_port_mode) {
@@ -3605,6 +3623,15 @@ static lbm_value ext_conf_set(lbm_value *args, lbm_uint argn) {
 	} else if (compare_symbol(name, &syms_vesc.m_ntc_motor_beta)) {
 		mcconf->m_ntc_motor_beta = lbm_dec_as_float(args[1]);
 		changed_mc = 1;
+	} else if (compare_symbol(name, &syms_vesc.m_ptc_motor_coeff)) {
+		mcconf->m_ptc_motor_coeff = lbm_dec_as_float(args[1]);
+		changed_mc = 1;
+	} else if (compare_symbol(name, &syms_vesc.m_ntcx_ptcx_temp_base)) {
+		mcconf->m_ntcx_ptcx_temp_base = lbm_dec_as_float(args[1]);
+		changed_mc = 1;
+	} else if (compare_symbol(name, &syms_vesc.m_ntcx_ptcx_res)) {
+		mcconf->m_ntcx_ptcx_res = lbm_dec_as_float(args[1]);
+		changed_mc = 1;
 	} else if (compare_symbol(name, &syms_vesc.si_motor_poles)) {
 		mcconf->si_motor_poles = lbm_dec_as_i32(args[1]);
 		changed_mc = 1;
@@ -3634,6 +3661,9 @@ static lbm_value ext_conf_set(lbm_value *args, lbm_uint argn) {
 		changed_mc = 1;
 	} else if (compare_symbol(name, &syms_vesc.foc_short_ls_on_zero_duty)) {
 		mcconf->foc_short_ls_on_zero_duty = lbm_dec_as_i32(args[1]);
+		changed_mc = 1;
+	} else if (compare_symbol(name, &syms_vesc.foc_overmod_factor)) {
+		mcconf->foc_overmod_factor = lbm_dec_as_float(args[1]);
 		changed_mc = 1;
 	} else if (compare_symbol(name, &syms_vesc.controller_id)) {
 		appconf->controller_id = lbm_dec_as_i32(args[1]);
@@ -3705,6 +3735,12 @@ static lbm_value ext_conf_set(lbm_value *args, lbm_uint argn) {
 			changed_mc = 2;
 		} else if (compare_symbol(name, &syms_vesc.foc_observer_gain)) {
 			mcconf->foc_observer_gain = lbm_dec_as_float(args[1]) * 1e6;
+			changed_mc = 2;
+		} else if (compare_symbol(name, &syms_vesc.foc_observer_type)) {
+			mcconf->foc_observer_type = lbm_dec_as_i32(args[1]);
+			changed_mc = 2;
+		} else if (compare_symbol(name, &syms_vesc.foc_mtpa_mode)) {
+			mcconf->foc_mtpa_mode = lbm_dec_as_i32(args[1]);
 			changed_mc = 2;
 		} else if (compare_symbol(name, &syms_vesc.foc_hfi_voltage_start)) {
 			mcconf->foc_hfi_voltage_start = lbm_dec_as_float(args[1]);
@@ -4040,6 +4076,10 @@ static lbm_value ext_conf_get(lbm_value *args, lbm_uint argn) {
 		res = lbm_enc_float(mcconf->foc_motor_flux_linkage * 1e3);
 	} else if (compare_symbol(name, &syms_vesc.foc_observer_gain)) {
 		res = lbm_enc_float(mcconf->foc_observer_gain * 1e-6);
+	} else if (compare_symbol(name, &syms_vesc.foc_observer_type)) {
+		res = lbm_enc_i(mcconf->foc_observer_type);
+	} else if (compare_symbol(name, &syms_vesc.foc_mtpa_mode)) {
+		res = lbm_enc_i(mcconf->foc_mtpa_mode);
 	} else if (compare_symbol(name, &syms_vesc.foc_hfi_voltage_start)) {
 		res = lbm_enc_float(mcconf->foc_hfi_voltage_start);
 	} else if (compare_symbol(name, &syms_vesc.foc_hfi_voltage_run)) {
@@ -4090,6 +4130,8 @@ static lbm_value ext_conf_get(lbm_value *args, lbm_uint argn) {
 		res = lbm_enc_float(mcconf->foc_fw_duty_start);
 	} else if (compare_symbol(name, &syms_vesc.foc_short_ls_on_zero_duty)) {
 		res = lbm_enc_i(mcconf->foc_short_ls_on_zero_duty);
+	} else if (compare_symbol(name, &syms_vesc.foc_overmod_factor)) {
+		res = lbm_enc_float(mcconf->foc_overmod_factor);
 	} else if (compare_symbol(name, &syms_vesc.m_invert_direction)) {
 		res = lbm_enc_i(mcconf->m_invert_direction);
 	} else if (compare_symbol(name, &syms_vesc.m_out_aux_mode)) {
@@ -4098,6 +4140,12 @@ static lbm_value ext_conf_get(lbm_value *args, lbm_uint argn) {
 		res = lbm_enc_i(mcconf->m_motor_temp_sens_type);
 	} else if (compare_symbol(name, &syms_vesc.m_ntc_motor_beta)) {
 		res = lbm_enc_float(mcconf->m_ntc_motor_beta);
+	} else if (compare_symbol(name, &syms_vesc.m_ptc_motor_coeff)) {
+		res = lbm_enc_float(mcconf->m_ptc_motor_coeff);
+	} else if (compare_symbol(name, &syms_vesc.m_ntcx_ptcx_temp_base)) {
+		res = lbm_enc_float(mcconf->m_ntcx_ptcx_temp_base);
+	} else if (compare_symbol(name, &syms_vesc.m_ntcx_ptcx_res)) {
+		res = lbm_enc_float(mcconf->m_ntcx_ptcx_res);
 	} else if (compare_symbol(name, &syms_vesc.m_encoder_counts)) {
 		res = lbm_enc_float(mcconf->m_encoder_counts);
 	} else if (compare_symbol(name, &syms_vesc.m_sensor_port_mode)) {
@@ -4620,8 +4668,8 @@ static lbm_value ext_conf_detect_lambda_enc(lbm_value *args, lbm_uint argn) {
 	float current = lbm_dec_as_float(args[0]);
 	float duty = lbm_dec_as_float(args[1]);
 	float erpm_per_sec = lbm_dec_as_float(args[2]);
-	float resistance = lbm_dec_as_float(args[3]);
-	float inductance = lbm_dec_as_float(args[4]) * 1e-6;
+	float resistance = lbm_dec_as_float(args[3]) * 1.0e-3;
+	float inductance = lbm_dec_as_float(args[4]) * 1.0e-6;
 
 	if (!(current > 0.0 && current <= mc_interface_get_configuration()->l_current_max &&
 			erpm_per_sec > 0.0 && duty > 0.02 && duty <= 0.9 && resistance >= 0.0 && inductance >= 0.0)) {

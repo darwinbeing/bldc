@@ -61,6 +61,9 @@
 #define LBM_POINTER_TYPE_LAST            0xCC000000u // 11001100000000000000000000000000
 // POINTER_TYPE_LAST is less than the value used for CONTINUATION_INTERNAL
 
+#define LBM_EXACT_CONS_MASK              0x10000001u
+#define LBM_EXACT_CONS_CONST_MASK        0x14000001u
+
 #define LBM_CONS_TYPE_MASK               0xF0000000u // 11110000000000000000000000000000
 #define LBM_CONS_CONST_TYPE_MASK         0xFF000000u // 11111111000000000000000000000000
 
@@ -114,6 +117,9 @@
 #define LBM_TYPE_DEFRAG_MEM              (lbm_uint)0xA000000000000000
 #define LBM_POINTER_TYPE_LAST            (lbm_uint)0xAC00000000000000
 // POINTER_TYPE_LAST is less than the value used for CONTINUATION_INTERNAL
+
+#define LBM_EXACT_CONS_MASK              (lbm_uint)0x1000000000000001
+#define LBM_EXACT_CONS_CONST_MASK        (lbm_uint)0x1400000000000001
 
 #define LBM_CONS_TYPE_MASK               (lbm_uint)0xF000000000000000
 #define LBM_CONS_CONST_TYPE_MASK         (lbm_uint)0xFF00000000000000
@@ -345,6 +351,7 @@
 #define SYM_ARRAY               0x20041
 #define SYM_IS_STRING           0x20042
 #define SYM_IS_CONSTANT         0x20043
+#define SYM_MEMBER              0x20044
 
 // Apply funs:
 // Get their arguments in evaluated form on the stack.
