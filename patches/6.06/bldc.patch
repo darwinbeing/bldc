@@ -1,0 +1,46 @@
+diff --git a/Makefile b/Makefile
+index 97324ac3..80e9592d 100644
+--- a/Makefile
++++ b/Makefile
+@@ -156,7 +156,7 @@ fw_$(1): fw_$(1)_vescfw
+ ifeq ($(7),)
+   $(1)_HW_DIR = $(dir $(filter %/hw_$(1).h, $(TARGET_PATHS)))
+   $(1)_HW_HEADER = $$($(1)_HW_DIR)/hw_$(1).h
+-  
++
+   $$(eval $$(call FIND_TARGET_C_CODE,$(1)_HW_SRC_FILE,$(1),$$($(1)_HW_DIR)))
+ else
+   $(1)_HW_SRC_FILE = $(7)
+@@ -181,6 +181,15 @@ fw_$(1)_vescfw:
+ 		BUILDDIR="$(2)" \
+ 		PROJECT="$(3)" \
+ 		build_args='$$($(1)_BUILD_MACROS)' USE_VERBOSE_COMPILE=no
++ifneq ($(OSFAMILY), windows)
++	$(V1) [ ! -d "$(BUILD_DIR)/$(1)/lst" ] || $(RM) -r "$(BUILD_DIR)/$(1)/lst"
++	$(V1) [ ! -d "$(BUILD_DIR)/$(1)/obj" ] || $(RM) -r "$(BUILD_DIR)/$(1)/obj"
++	$(V1) [ ! -d "$(BUILD_DIR)/$(1)/.dep" ] || $(RM) -r "$(BUILD_DIR)/$(1)/.dep"
++else
++	$(V1) powershell -noprofile -command "& {if (Test-Path $(BUILD_DIR)/$(1)/lst) {Remove-Item -Recurse $(BUILD_DIR)/$(1)/lst}}"
++	$(V1) powershell -noprofile -command "& {if (Test-Path $(BUILD_DIR)/$(1)/obj) {Remove-Item -Recurse $(BUILD_DIR)/$(1)/obj}}"
++	$(V1) powershell -noprofile -command "& {if (Test-Path $(BUILD_DIR)/$(1)/.dep) {Remove-Item -Recurse $(BUILD_DIR)/$(1)/.dep}}"
++endif
+ 
+ $(1)_flash: fw_$(1)_flash
+ fw_$(1)_flash: fw_$(1)_vescfw fw_$(1)_flash_only
+@@ -280,16 +289,6 @@ all_fw_package: all_fw all_fw_package_clean
+ # Place all firmware files into `./package` directory
+ 	$(V1) $(PYTHON) package_firmware.py
+ 
+-# Find all the leftover object and lst files
+-	$(eval BUILD_CRUFT := $(call rwildcard,$(ROOT_DIR)/build,*.lst *.o))
+-
+-# Delete the cruft files, so as not to unnecessarily consume GB of space
+-ifneq ($(OSFAMILY), windows)
+-	$(V1) $(RM) $(BUILD_CRUFT)
+-else
+-	$(V1) powershell -noprofile -command "& {Remove-Item $(BUILD_CRUFT)}"
+-endif
+-
+ .PHONY: all_fw_package_clean
+ all_fw_package_clean:
+ 	$(V0) @echo " CLEAN        $(ROOT_DIR)/package/*"

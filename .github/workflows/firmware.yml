@@ -45,14 +45,30 @@ jobs:
         id: mktemp
         run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
         shell: bash
-      - name: Setup
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
-        id: GetVersion
+      - name: Apply Patch
         run: |
-          URL=https://raw.githubusercontent.com/darwinbeing/bldc/ci/patches/bldc.patch
-          curl "$URL" -o ${{ env.FW_TMP_DIR }}/bldc.patch
-          cat "${{ env.FW_TMP_DIR }}/bldc.patch"
+          if [[ "${{ inputs.fw_ver }}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+              PATCH_VERSION="${{ inputs.fw_ver }}"
+          elif [[ "${{ inputs.fw_ver }}" == "master" ]]; then
+              PATCH_VERSION="master"
+          else
+              PATCH_VERSION="master"
+          fi
+
+          URL=https://raw.githubusercontent.com/darwinbeing/bldc/ci/patches/"${PATCH_VERSION}"/bldc.patch
+          PATCH_FILE="${{ env.FW_TMP_DIR }}/bldc.patch"
+
+          echo "Downloading patch..."
+          if curl -sSfL "$URL" -o "$PATCH_FILE"; then
+            if [ -s "$PATCH_FILE" ]; then
+              echo "Applying patch..."
+              git apply "$PATCH_FILE"
+            else
+              echo "Patch file is empty, skipping."
+            fi
+          else
+            echo "Patch file not found at $URL, skipping."
+          fi
         shell: bash
       - name: Install GNU Arm Embedded Toolchain - ${{ matrix.gcc }}
         uses: carlosperate/arm-none-eabi-gcc-action@v1.8.2
@@ -66,8 +82,6 @@ jobs:
               mkdir -p package
               find build_all -mindepth 1 -type d -exec cp -r {} package \;
           else
-              git apply "${{ env.FW_TMP_DIR }}/bldc.patch"
-              # patch -p1 < ${{ env.FW_TMP_DIR }}/bldc.patch
               make all_fw_package
           fi
           echo "Copy CHANGELOG"
