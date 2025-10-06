@@ -371,6 +371,13 @@ __attribute__((section(".text2"))) bool conf_general_store_app_configuration(app
 	uint8_t *conf_addr = (uint8_t*)conf;
 	uint16_t var;
 
+	// Some hardware does not have USB and/or UART broken out. On that hardware we always boot with
+	// VESC CAN mode to make it harder to lock yourself out of the device.
+#ifdef HW_BOOT_VESC_CAN
+	CAN_MODE can_mode_before = conf->can_mode;
+	conf->can_mode = CAN_MODE_VESC;
+#endif
+
 	conf->crc = app_calc_crc(conf);
 
 	FLASH_Unlock();
@@ -386,6 +393,10 @@ __attribute__((section(".text2"))) bool conf_general_store_app_configuration(app
 			break;
 		}
 	}
+
+#ifdef HW_BOOT_VESC_CAN
+	conf->can_mode = can_mode_before;
+#endif
 
 	FLASH_Lock();
 	timeout_configure_IWDT();
