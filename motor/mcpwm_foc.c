@@ -3645,14 +3645,7 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 			case FOC_SENSOR_MODE_HFI_V5:
 			case FOC_SENSOR_MODE_HFI_START:{
 				motor_now->m_motor_state.phase = motor_now->m_phase_now_observer;
-
-				// The Single and double pulse modes do not appear to work well when the motor
-				// already is spinning. Therefore use the openloop ERPM value for now, as it
-				// is a much lower value by default. TODO: This is a hack, look into this properly!
-				float rpm_tres = conf_now->foc_hfi_amb_mode == FOC_AMB_MODE_SIX_VECTOR ?
-						(conf_now->foc_sl_erpm_hfi * 1.1) : conf_now->foc_openloop_rpm;
-
-				if (fabsf(RADPS2RPM_f(motor_now->m_pll_speed)) < rpm_tres) {
+				if (fabsf(RADPS2RPM_f(motor_now->m_pll_speed)) < conf_now->foc_hfi_reset_erpm) {
 					motor_now->m_hfi.est_done_cnt = 0;
 					motor_now->m_hfi.flip_cnt = 0;
 				}
@@ -3685,6 +3678,7 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 		motor_now->m_motor_state.id_target = 0.0;
 		motor_now->m_motor_state.id_override_hfi = false;
 		motor_now->m_hfi.angle = motor_now->m_motor_state.phase;
+		motor_now->m_hfi.double_integrator = -motor_now->m_speed_est_fast;
 
 		float s = motor_now->m_motor_state.phase_sin;
 		float c = motor_now->m_motor_state.phase_cos;
@@ -4522,21 +4516,6 @@ static void control_current(motor_all_state_t *motor, float dt) {
 	UTILS_LP_FAST(state_m->id_filter, state_m->id, conf_now->foc_current_filter_const);
 	UTILS_LP_FAST(state_m->iq_filter, state_m->iq, conf_now->foc_current_filter_const);
 
-	float d_gain_scale = 1.0;
-	if (conf_now->foc_d_gain_scale_start < 0.99) {
-		float max_mod_norm = fabsf(state_m->duty_now / max_duty);
-		if (max_duty < 0.01) {
-			max_mod_norm = 1.0;
-		}
-		if (max_mod_norm > conf_now->foc_d_gain_scale_start) {
-			d_gain_scale = utils_map(max_mod_norm, conf_now->foc_d_gain_scale_start, 1.0,
-					1.0, conf_now->foc_d_gain_scale_max_mod);
-			if (d_gain_scale < conf_now->foc_d_gain_scale_max_mod) {
-				d_gain_scale = conf_now->foc_d_gain_scale_max_mod;
-			}
-		}
-	}
-
 	float Ierr_d = state_m->id_target - state_m->id;
 	float Ierr_q = state_m->iq_target - state_m->iq;
 
@@ -4545,11 +4524,11 @@ static void control_current(motor_all_state_t *motor, float dt) {
 		ki = motor->m_current_ki_temp_comp;
 	}
 
-	state_m->vd_int += Ierr_d * (ki * d_gain_scale * dt);
+	state_m->vd_int += Ierr_d * (ki * dt);
 	state_m->vq_int += Ierr_q * (ki * dt);
 
 	// Feedback (PI controller). No D action needed because the plant is a first order system (tf = 1/(Ls+R))
-	state_m->vd = state_m->vd_int + Ierr_d * conf_now->foc_current_kp * d_gain_scale;
+	state_m->vd = state_m->vd_int + Ierr_d * conf_now->foc_current_kp;
 	state_m->vq = state_m->vq_int + Ierr_q * conf_now->foc_current_kp;
 
 	// Decoupling. Using feedforward this compensates for the fact that the equations of a PMSM
