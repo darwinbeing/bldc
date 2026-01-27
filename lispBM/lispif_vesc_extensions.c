@@ -62,6 +62,7 @@
 #include "flash_helper.h"
 #include "packet.h"
 #include "timer.h"
+#include "encoder_cfg.h"
 
 #include <math.h>
 #include <ctype.h>
@@ -4969,6 +4970,52 @@ static lbm_value ext_conf_detect_hall(lbm_value *args, lbm_uint argn) {
 	return ENC_SYM_TRUE;
 }
 
+static lbm_value ext_conf_remap_as504x(lbm_value *args, lbm_uint argn) {
+	for (lbm_uint i = 0;i < argn;i++) {
+		if (lbm_is_number(args[i])) {
+
+			stm32_gpio_t *port; uint32_t pin;
+			if (lispif_symbol_to_io(lbm_dec_sym(args[0]), &port, &pin)) {
+				switch (i) {
+				case 0: {
+					encoder_cfg_as504x.sw_spi.nss_gpio = port;
+					encoder_cfg_as504x.sw_spi.nss_pin = pin;
+					break;
+				}
+
+				case 1: {
+					encoder_cfg_as504x.sw_spi.sck_gpio = port;
+					encoder_cfg_as504x.sw_spi.sck_pin = pin;
+					break;
+				}
+
+				case 2: {
+					encoder_cfg_as504x.sw_spi.mosi_gpio = port;
+					encoder_cfg_as504x.sw_spi.mosi_pin = pin;
+					break;
+				}
+
+				case 3: {
+					encoder_cfg_as504x.sw_spi.miso_gpio = port;
+					encoder_cfg_as504x.sw_spi.miso_pin = pin;
+					break;
+				}
+
+				default:
+					break;
+				}
+			} else {
+				return ENC_SYM_EERROR;
+			}
+		}
+	}
+
+	volatile mc_configuration *conf = (volatile mc_configuration*)mc_interface_get_configuration();
+	encoder_update_config(conf);
+
+	return ENC_SYM_TRUE;
+}
+
 static lbm_value ext_uavcan_last_rawcmd(lbm_value *args, lbm_uint argn) {
 	LBM_CHECK_ARGN_NUMBER(1);
 	int can_if = lbm_dec_as_i32(args[0]);
@@ -6278,6 +6325,7 @@ void lispif_load_vesc_extensions(bool main_found) {
 		lbm_add_extension("conf-get-limits", ext_conf_get_limits);
 		lbm_add_extension("conf-detect-lambda-enc", ext_conf_detect_lambda_enc);
 		lbm_add_extension("conf-detect-hall", ext_conf_detect_hall);
+		lbm_add_extension("conf-remap-as504x", ext_conf_remap_as504x);
 
 		// Native libraries
 		lbm_add_extension("load-native-lib", ext_load_native_lib);
