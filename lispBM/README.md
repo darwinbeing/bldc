@@ -4365,6 +4365,39 @@ Runs hall sensor detection using current in openloop. Returns the hall sensor ta
 
 ---
 
+#### conf-remap-as504x
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 7.00+ |
+
+```clj
+(conf-remap-as504x optCs optSck optMosi optMiso)
+```
+
+Remap one or more AS504x encoder pins. All arguments are optional and nil can be used to leave pins unchanged. Example:
+
+```clj
+
+; Use 'pin-swdio as chip select and 'pin-swclk as clock. Leave other pins
+; unchanged
+(conf-remap-as504x 'pin-swdio 'pin-swclk)
+
+; Use 'pin-swclk as clock. Leave other pins unchanged
+(conf-remap-as504x nil 'pin-swclk)
+
+; Available pins
+'pin-rx
+'pin-tx
+'pin-swdio
+'pin-swclk
+'pin-hall1
+'pin-hall2
+'pin-hall3
+```
+
+---
+
 ### EEPROM (Nonvolatile Storage)
 
 Up to 128 (256 in FW 6.06) variables (int32 or float) can be stored in a nonvolatile memory reserved for LispBM. These variables persist between power cycles and configuration changes, but not between firmware updates. Keep in mind that the motor will be stopped briefly when writing them and that they only can be written a limited number of times (about 100 000 writes) before wear on the flash memory starts to become an issue.

@@ -125,7 +125,8 @@ bool encoder_init(volatile mc_configuration *conf) {
 				HW_HALL_ENC_GPIO1, HW_HALL_ENC_PIN1, // sck
 				HW_HALL_ENC_GPIO2, HW_HALL_ENC_PIN2, // mosi
 				HW_HALL_ENC_GPIO2, HW_HALL_ENC_PIN2, // miso
-				{{NULL, NULL}, NULL, NULL} // Mutex
+				{{NULL, NULL}, NULL, NULL}, // Mutex
+				false // Mutex init done
 		};
 		encoder_cfg_tle5012.sw_spi = sw_ssc;
 
@@ -151,7 +152,8 @@ bool encoder_init(volatile mc_configuration *conf) {
 				HW_SPI_PORT_SCK, HW_SPI_PIN_SCK, // sck
 				HW_SPI_PORT_MOSI, HW_SPI_PIN_MOSI, // mosi
 				HW_SPI_PORT_MOSI, HW_SPI_PIN_MOSI, // miso (shared dat line)
-				{{NULL, NULL}, NULL, NULL} // Mutex
+				{{NULL, NULL}, NULL, NULL}, // Mutex
+				false // Mutex init done
 		};
 		encoder_cfg_tle5012.sw_spi = sw_ssc;	
 
@@ -337,6 +339,11 @@ void encoder_update_config(volatile mc_configuration *conf) {
 		encoder_cfg_ABI.counts = conf->m_encoder_counts;
 		TIM_SetAutoreload(encoder_cfg_ABI.timer, encoder_cfg_ABI.counts - 1);
 	} break;
+
+	case SENSOR_PORT_MODE_AS5047_SPI: {
+		spi_bb_init(&(encoder_cfg_as504x.sw_spi));
+		break;
+	}
 
 	default:
 		break;
