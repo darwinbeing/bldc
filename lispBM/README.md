@@ -757,6 +757,7 @@ Read system info parameter param. Example:
 (sysinfo 'compiler) ; GCC version, e.g. 7.3.1. ESC only.
 (sysinfo 'hw-type) ; Hardware type, e.g. hw-express. Added in 6.02.
 (sysinfo 'part-running) ; Running partition name. Express only.
+(sysinfo 'cpu-freq)  ; CPU frequency in MHz. Express only.
 ```
 
 ---
