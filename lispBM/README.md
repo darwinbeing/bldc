@@ -5956,10 +5956,10 @@ Same as uavcan-last-rawcmd, but for the last rpm-command.
 | ESC, Express | 6.00+ |
 
 ```clj
-(lbm-set-quota quota)
+(lbm-set-quota quota-us)
 ```
 
-Set how many evaluation steps to run each thread between context switches. Default is 50. A lower value will alter between threads more often, reducing latency between context switches at the cost of overall performance. The default value of 50 has relatively low performance overhead. Setting the quota to the lowest possible value of 1, meaning that each thread gets to run one step at a time, roughly halves the performance.
+Set how many microseconds to run each thread between context switches. Default is 2000. A lower value will alter between threads more often, reducing latency between context switches at the cost of overall performance. The default value of 2000 has relatively low performance overhead.
 
 Lowering this value is useful if there are one or more timing-critical threads (that e.g. read encoders) that cannot wait too long between iterations.
 
