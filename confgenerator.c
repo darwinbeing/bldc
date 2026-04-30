@@ -45,6 +45,7 @@ int32_t confgenerator_serialize_mcconf(uint8_t *buffer, const mc_configuration *
 	buffer_append_float16(buffer, conf->l_current_max_scale, 10000, &ind);
 	buffer_append_float16(buffer, conf->l_current_min_scale, 10000, &ind);
 	buffer_append_float16(buffer, conf->l_duty_start, 10000, &ind);
+	buffer[ind++] = conf->l_additional_faults;
 	buffer_append_float32_auto(buffer, conf->sl_min_erpm, &ind);
 	buffer_append_float32_auto(buffer, conf->sl_min_erpm_cycle_int_limit, &ind);
 	buffer_append_float32_auto(buffer, conf->sl_max_fullbreak_current_dir_change, &ind);
@@ -384,6 +385,7 @@ bool confgenerator_deserialize_mcconf(const uint8_t *buffer, mc_configuration *c
 	conf->l_current_max_scale = buffer_get_float16(buffer, 10000, &ind);
 	conf->l_current_min_scale = buffer_get_float16(buffer, 10000, &ind);
 	conf->l_duty_start = buffer_get_float16(buffer, 10000, &ind);
+	conf->l_additional_faults = buffer[ind++];
 	conf->sl_min_erpm = buffer_get_float32_auto(buffer, &ind);
 	conf->sl_min_erpm_cycle_int_limit = buffer_get_float32_auto(buffer, &ind);
 	conf->sl_max_fullbreak_current_dir_change = buffer_get_float32_auto(buffer, &ind);
@@ -719,6 +721,7 @@ void confgenerator_set_defaults_mcconf(mc_configuration *conf) {
 	conf->l_current_max_scale = MCCONF_L_CURRENT_MAX_SCALE;
 	conf->l_current_min_scale = MCCONF_L_CURRENT_MIN_SCALE;
 	conf->l_duty_start = MCCONF_L_DUTY_START;
+	conf->l_additional_faults = MCCONF_L_ADDITIONAL_FAULTS;
 	conf->sl_min_erpm = MCCONF_SL_MIN_RPM;
 	conf->sl_min_erpm_cycle_int_limit = MCCONF_SL_MIN_ERPM_CYCLE_INT_LIMIT;
 	conf->sl_max_fullbreak_current_dir_change = MCCONF_SL_MAX_FB_CURR_DIR_CHANGE;
