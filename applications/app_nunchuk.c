@@ -347,10 +347,11 @@ static THD_FUNCTION(output_thread, arg) {
 		float current = 0;
 		bool coast_brake = false;
 		static bool coast_brake_prev = false;
+		float coast_brake_current = fabsf(config.coast_brake_level * mcconf->lo_current_min);
 
 		if (fabsf(out_val) < 0.01 && config.coast_brake_level > 0.005 &&
-				(prev_current < (fabsf(mcconf->lo_current_min) * 0.02) || coast_brake_prev)) {
-			current = -fabsf(config.coast_brake_level * mcconf->lo_current_min);
+				(fabsf(prev_current) < coast_brake_current || coast_brake_prev)) {
+			current = -coast_brake_current;
 			coast_brake = true;
 		} else {
 			if (config.ctrl_type == CHUK_CTRL_TYPE_CURRENT_BIDIRECTIONAL) {
