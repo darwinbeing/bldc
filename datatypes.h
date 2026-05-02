@@ -739,6 +739,8 @@ typedef struct {
 	bool use_smart_rev;
 	float smart_rev_max_duty;
 	float smart_rev_ramp_time;
+	float coast_brake_level;
+	float coast_brake_ramp_time;
 } chuk_config;
 
 typedef struct {
