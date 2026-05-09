@@ -1555,6 +1555,20 @@ Get duty cycle. Range -1.0 to 1.0.
 
 ---
 
+#### get-duty-abs
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 7.00+ |
+
+```clj
+(get-duty-abs)
+```
+
+Get filtered absolute duty cycle. This is the value used for field weakening. Range 0.0 to 1.0.
+
+---
+
 #### get-rpm
 
 | Platforms | Firmware |
@@ -4081,6 +4095,7 @@ The following selection of app and motor parameters can be read and set from Lis
 'foc-fw-duty-start      ; Duty where field weakening starts (Added in FW 6.05)
 'foc-short-ls-on-zero-duty ; Short low-side FETs on 0 duty (Added in FW 6.05)
 'foc-overmod-factor     ; FOC overmodulation factor (Added in FW 6.06)
+'foc-mag-vd-max         ; FOC maximum D axis modulation (Added in FW 7.00)
 'min-speed              ; Minimum speed in meters per second (a negative value)
 'max-speed              ; Maximum speed in meters per second
 'app-to-use             ; App to use
