@@ -4182,7 +4182,32 @@ The following selection of app and motor parameters can be read and set from Lis
 'adc-v1-max             ; Throttle 1 high fault voltage (Added in FW 6.05)
 'pas-current-scaling    ; PAS current scaling (Added in FW 6.05)
 
-; Express settings (Added in 6.05)
+; VESC Remote App (Added in firmware 7.00)
+'vr_ctrl_type           ; Control Type
+                        ;    0: NONE
+                        ;    1: CURRENT
+                        ;    2: CURRENT_NOREV
+                        ;    3: CURRENT_BIDIRECTIONAL
+'vr_hyst                ; Input deadband, range 0 to 1
+'vr_ramp_time_pos       ; Positive ramping time in seconds
+'vr_ramp_time_neg       ; Negative ramping time in seconds
+'vr_cc_erpm_per_s       ; Cruise control ERPM per second throttle ramp speed
+'vr_throttle_exp        ; Curve gain for the throttle. 0 means linear.
+'vr_throttle_exp_brake  ; Curve gain for the throttle when braking
+'vr_throttle_exp_mode   ; Throttle curve mode
+                        ;    0: Exponential
+                        ;    1: Natural
+                        ;    2: Polynomial
+'vr_multi_esc           ; Control multiple ESCs over CAN
+'vr_tc                  ; Traction control (multi-ESC only)
+'vr_tc_max_diff         ; Traction control max ERPM diff
+'vr_use_smart_rev       ; Use smart reverse when holding full brake
+'vr_smart_rev_max_duty  ; Maximum duty cycle for smart reverse
+'vr_smart_rev_ramp_time ; Smart reverse ramp time in seconds
+'vr_coast_brake_level   ; Brake to apply when coasting
+'vr_coast_brake_ramp_time ; Time to ramp up coasting brake in seconds
+
+; Express settings (Added in firmware 6.05)
 'controller-id          ; VESC CAN ID
 'can-baud-rate          ; CAN-bus baud rate
                         ;    0: 125K
