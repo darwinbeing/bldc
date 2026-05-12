@@ -20,6 +20,7 @@
 	* Overspeed
 	* Underspeed
 	* Absolute overspeed
+* Added field weakening backoff gain parameter.
 
 ### 6.06.6
 #### 2025-11-01
