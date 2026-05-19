@@ -160,11 +160,15 @@ void hw_init_gpio(void) {
 	palSetPadMode(GPIOC, 3, PAL_MODE_INPUT_ANALOG);
 	palSetPadMode(GPIOC, 4, PAL_MODE_INPUT_ANALOG);
 
+#if defined(HWMAXIMP_120_PH) || defined(HWMAXIMP_150_PH)
+	palSetPadMode(GPIOA, 4, PAL_MODE_INPUT_PULLUP);
+#else
 	// DAC as voltage reference for shunt amps
 	palSetPadMode(GPIOA, 4, PAL_MODE_INPUT_ANALOG);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_DAC, ENABLE);
 	DAC->CR |= DAC_CR_EN1;
 	DAC->DHR12R1 = 2047;
+#endif
 
 	lispif_add_ext_load_callback(load_extensions);
 }
@@ -374,7 +378,8 @@ static THD_FUNCTION(mux_thread, arg) {
 			palSetPadMode(HW_UART_TX_PORT, HW_UART_TX_PIN, PAL_MODE_INPUT);
 			palSetPadMode(HW_UART_RX_PORT, HW_UART_RX_PIN, PAL_MODE_INPUT);
 		} else if (mcconf->motor_type == MOTOR_TYPE_FOC &&
-				mcconf->foc_sensor_mode == FOC_SENSOR_MODE_ENCODER) {
+			(mcconf->foc_sensor_mode == FOC_SENSOR_MODE_ENCODER ||
+			 mcconf->foc_sensor_mode == FOC_SENSOR_MODE_ENCODER_AB)) {
 
 			// Prevent the uart-pins from interfering
 			if (mcconf->m_sensor_port_mode == SENSOR_PORT_MODE_ABI ||

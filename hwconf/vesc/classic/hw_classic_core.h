@@ -226,6 +226,7 @@
 #define HW_SPI_PIN_MISO			6
 
 // IMU
+#define LSM6DS3_USE_SPI
 #define LSM6DS3_NSS_GPIO		GPIOA
 #define LSM6DS3_NSS_PIN			15
 #define LSM6DS3_SCK_GPIO		GPIOB
@@ -270,9 +271,6 @@
 #endif
 #ifndef MCCONF_L_IN_CURRENT_MIN
 #define MCCONF_L_IN_CURRENT_MIN			-150.0	// Input current limit in Amperes (Lower)
-#endif
-#ifndef APPCONF_SHUTDOWN_MODE
-#define APPCONF_SHUTDOWN_MODE			SHUTDOWN_MODE_ALWAYS_ON
 #endif
 #ifndef APPCONF_APP_TO_USE
 #define APPCONF_APP_TO_USE				APP_NONE

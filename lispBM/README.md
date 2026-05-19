@@ -1423,6 +1423,34 @@ Get the set FOC q-axis current. This is the raw requested current.
 
 ---
 
+#### get-id-target
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 7.00+ |
+
+```clj
+(get-id-target)
+```
+
+Get the FOC d-axis target current. This is sent to the current controller after applying all limits, MTPA, HFI and field weakening.
+
+---
+
+#### get-iq-target
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 7.00+ |
+
+```clj
+(get-iq-target)
+```
+
+Get the FOC q-axis target current. This is sent to the current controller after applying all limits, MTPA, HFI and field weakening.
+
+---
+
 #### get-vd
 
 | Platforms | Firmware |
@@ -1524,6 +1552,20 @@ Where i1 is the delta current for the first voltage, i2 is the response current 
 ```
 
 Get duty cycle. Range -1.0 to 1.0.
+
+---
+
+#### get-duty-abs
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 7.00+ |
+
+```clj
+(get-duty-abs)
+```
+
+Get filtered absolute duty cycle. This is the value used for field weakening. Range 0.0 to 1.0.
 
 ---
 
@@ -3421,6 +3463,14 @@ Start the I2C driver on the COMM-port on the VESC. If any app is using the I2C p
 'pin-hall1
 'pin-hall2
 'pin-hall3
+'pin-hall4
+'pin-hall5
+'pin-hall6
+'pin-adc1
+'pin-adc2
+'pin-adc3
+'pin-adc4
+'pin-ppm
 
 ; Note: On express the pins are a number
 ```
@@ -3540,6 +3590,9 @@ Configure GPIO pin to mode. Example:
 'pin-hall1  ; Sensor port hall1
 'pin-hall2  ; Sensor port hall2
 'pin-hall3  ; Sensor port hall3
+'pin-hall4  ; Sensor port motor 2 hall1 (FW 7.00+)
+'pin-hall5  ; Sensor port motor 2 hall2 (FW 7.00+)
+'pin-hall6  ; Sensor port motor 2 hall3 (FW 7.00+)
 'pin-adc1   ; ADC1-pin on COMM-port
 'pin-adc2   ; ADC2-pin on COMM-port
 'pin-adc3   ; ADC3-pin on COMM-port (if available)
@@ -3799,6 +3852,82 @@ Read angle from the AS504x-encoder in degrees.
 
 ---
 
+### BME280
+
+#### bme280-start
+
+| Platforms | Firmware |
+|---|---|
+| Express | 7.00+ |
+
+```clj
+(bme280-start optRate optPinSda optPinScl)
+```
+
+Start BME280 pressure/humidity/temperature sensor driver over i2c. Takes the same arguments as i2c-start and shares the same i2c-pins. Also shares the i2c-mutex, so it can be used together with other I2C peripherals as long as they use the same pins. Example:
+
+```clj
+(bme280-start 'rate-100k 21 20)
+```
+
+---
+
+#### bme280-stop
+
+| Platforms | Firmware |
+|---|---|
+| Express | 7.00+ |
+
+```clj
+(bme280-stop)
+```
+
+Stop the BME280 driver.
+
+---
+
+#### bme280-hum
+
+| Platforms | Firmware |
+|---|---|
+| Express | 7.00+ |
+
+```clj
+(bme280-hum)
+```
+
+Read the relative humidity from the BME280.
+
+---
+
+#### bme280-temp
+
+| Platforms | Firmware |
+|---|---|
+| Express | 7.00+ |
+
+```clj
+(bme280-temp)
+```
+
+Read the temperature from the BME280 in degrees celcius.
+
+---
+
+#### bme280-pres
+
+| Platforms | Firmware |
+|---|---|
+| Express | 7.00+ |
+
+```clj
+(bme280-pres)
+```
+
+Read the pressure from the BME280 in pascal.
+
+---
+
 ### Configuration
 
 The following selection of app and motor parameters can be read and set from LispBM:
@@ -3964,8 +4093,12 @@ The following selection of app and motor parameters can be read and set from Lis
                         ; Bit 2: Auto-calibrate when undriven
 'foc-fw-current-max     ; Maximum field weakening current (Added in FW 6.05)
 'foc-fw-duty-start      ; Duty where field weakening starts (Added in FW 6.05)
+'foc-fw-ramp-time       ; Field weakening ramp time in seconds (Added in FW 7.00)
+'foc-fw-q-current-factor ; Field weakening q current factor (Added in FW 7.00)
+'foc-fw-backoff         ; Field weakening backoff (Added in FW 7.00)
 'foc-short-ls-on-zero-duty ; Short low-side FETs on 0 duty (Added in FW 6.05)
 'foc-overmod-factor     ; FOC overmodulation factor (Added in FW 6.06)
+'foc-mag-vd-max         ; FOC maximum D axis modulation (Added in FW 7.00)
 'min-speed              ; Minimum speed in meters per second (a negative value)
 'max-speed              ; Maximum speed in meters per second
 'app-to-use             ; App to use
@@ -4052,7 +4185,32 @@ The following selection of app and motor parameters can be read and set from Lis
 'adc-v1-max             ; Throttle 1 high fault voltage (Added in FW 6.05)
 'pas-current-scaling    ; PAS current scaling (Added in FW 6.05)
 
-; Express settings (Added in 6.05)
+; VESC Remote App (Added in firmware 7.00)
+'vr_ctrl_type           ; Control Type
+                        ;    0: NONE
+                        ;    1: CURRENT
+                        ;    2: CURRENT_NOREV
+                        ;    3: CURRENT_BIDIRECTIONAL
+'vr_hyst                ; Input deadband, range 0 to 1
+'vr_ramp_time_pos       ; Positive ramping time in seconds
+'vr_ramp_time_neg       ; Negative ramping time in seconds
+'vr_cc_erpm_per_s       ; Cruise control ERPM per second throttle ramp speed
+'vr_throttle_exp        ; Curve gain for the throttle. 0 means linear.
+'vr_throttle_exp_brake  ; Curve gain for the throttle when braking
+'vr_throttle_exp_mode   ; Throttle curve mode
+                        ;    0: Exponential
+                        ;    1: Natural
+                        ;    2: Polynomial
+'vr_multi_esc           ; Control multiple ESCs over CAN
+'vr_tc                  ; Traction control (multi-ESC only)
+'vr_tc_max_diff         ; Traction control max ERPM diff
+'vr_use_smart_rev       ; Use smart reverse when holding full brake
+'vr_smart_rev_max_duty  ; Maximum duty cycle for smart reverse
+'vr_smart_rev_ramp_time ; Smart reverse ramp time in seconds
+'vr_coast_brake_level   ; Brake to apply when coasting
+'vr_coast_brake_ramp_time ; Time to ramp up coasting brake in seconds
+
+; Express settings (Added in firmware 6.05)
 'controller-id          ; VESC CAN ID
 'can-baud-rate          ; CAN-bus baud rate
                         ;    0: 125K
@@ -4454,6 +4612,58 @@ Remap one or more AS504x encoder pins. All arguments are optional and nil can be
 'pin-hall1
 'pin-hall2
 'pin-hall3
+'pin-hall4
+'pin-hall5
+'pin-hall6
+'pin-adc1
+'pin-adc2
+'pin-adc3
+'pin-adc4
+'pin-ppm
+```
+
+---
+
+#### conf-remap-hall
+
+| Platforms | Firmware |
+|---|---|
+| ESC | 7.00+ |
+
+```clj
+(conf-remap-hall optHall1 optHall2 optHall3 optHall1M2 optHall2M2 optHall3M2)
+```
+
+Remap one or more hall sensor pins. All arguments are optional and nil can be used to leave pins unchanged. Example:
+
+```clj
+
+; Use 'pin-swdio as hall 1 and 'pin-swclk as hall 2. Leave other pins
+; unchanged
+(conf-remap-hall 'pin-swdio 'pin-swclk)
+
+; Use 'pin-swclk as hall 2. Leave other pins unchanged
+(conf-remap-hall nil 'pin-swclk)
+
+; Restore default hall sensor mapping
+(conf-remap-hall)
+
+; Available pins
+'pin-rx
+'pin-tx
+'pin-swdio
+'pin-swclk
+'pin-hall1
+'pin-hall2
+'pin-hall3
+'pin-hall4
+'pin-hall5
+'pin-hall6
+'pin-adc1
+'pin-adc2
+'pin-adc3
+'pin-adc4
+'pin-ppm
 ```
 
 ---
@@ -7475,10 +7685,20 @@ The express can use the remote peripheral to drive addressable LEDs on any pin. 
 | Express | 6.05+ |
 
 ```clj
-(rgbled-init pin)
+(rgbled-init pin optTiming)
 ```
 
 Initialize the rgbled-driver on pin. If the driver already is initialized it will be de-initialized first.
+
+The optional argument optTiming can be used to specify the timing of the bitstream. Leaving it out is the same as setting it to 0.
+
+| Number | LED Type |
+|---|---|
+| 0 | Generic, works with most LEDs |
+| 1 | WS2812B |
+| 2 | WS2815 |
+| 3 | SK6812 |
+| 4 | SK6815 |
 
 ---
 
