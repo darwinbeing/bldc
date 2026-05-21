@@ -280,13 +280,12 @@ all_fw_package: all_fw all_fw_package_clean
 # Place all firmware files into `./package` directory
 	$(V1) $(PYTHON) package_firmware.py
 
-# Find all the leftover object and lst files
-	$(eval BUILD_CRUFT := $(call rwildcard,$(ROOT_DIR)/build,*.lst *.o))
-
 # Delete the cruft files, so as not to unnecessarily consume GB of space
 ifneq ($(OSFAMILY), windows)
-	$(V1) $(RM) $(BUILD_CRUFT)
+	$(V1) find $(ROOT_DIR)/build \( -name '*.lst' -o -name '*.o' \) -type f -delete
 else
+# Find all the leftover object and lst files
+	$(eval BUILD_CRUFT := $(call rwildcard,$(ROOT_DIR)/build,*.lst *.o))
 	$(V1) powershell -noprofile -command "& {Remove-Item $(BUILD_CRUFT)}"
 endif
 
