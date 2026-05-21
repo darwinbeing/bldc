@@ -260,6 +260,8 @@
 
 // IMU
 #define LSM6DS3_USE_SPI
+#define LSM6DS3_HWSPI_DEV		SPID3
+#define LSM6DS3_HWSPI_AF		GPIO_AF_SPI3
 #define LSM6DS3_NSS_GPIO		GPIOA
 #define LSM6DS3_NSS_PIN			15
 #define LSM6DS3_SCK_GPIO		GPIOB
@@ -268,6 +270,7 @@
 #define LSM6DS3_MOSI_PIN		5
 #define LSM6DS3_MISO_GPIO		GPIOB
 #define LSM6DS3_MISO_PIN		4
+#define IMU_ROT_270
 
 // Measurement macros
 #define ADC_V_L1				ADC_Value[ADC_IND_SENS1]
