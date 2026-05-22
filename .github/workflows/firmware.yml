@@ -37,17 +37,17 @@ jobs:
             echo "FW_REF=${{ inputs.fw_ver }}" >> $GITHUB_ENV
           fi
         shell: bash
-      - name: Checkout Patch Script
-        uses: actions/checkout@v4
-        with:
-          path: _scripts
-          sparse-checkout: .github/scripts
-          sparse-checkout-cone-mode: false
       - name: Clone Repository
         uses: actions/checkout@v4
         with:
           ref: ${{ env.FW_REF }}
-          clean: false
+      - name: Checkout Patch Script
+        uses: actions/checkout@v4
+        with:
+          ref: ci
+          path: _scripts
+          sparse-checkout: .github/scripts
+          sparse-checkout-cone-mode: false
       - name: Apply Patch
         run: python3 _scripts/.github/scripts/patch_makefile.py
         shell: bash
