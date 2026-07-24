@@ -28,6 +28,11 @@
 #endif
 
 #ifdef HW_SHUTDOWN_CUSTOM
+
+bool shutdown_sample_button(void) {
+	return false;
+}
+
 // Do nothing. All shutdown functionality is handled in the hardware file.
 #elif defined(HW_SHUTDOWN_HOLD_ON)
 
@@ -73,6 +78,30 @@ void shutdown_set_sampling_disabled(bool disabled) {
 
 void shutdown_hold(bool hold) {
 	m_shutdown_hold = hold;
+}
+
+bool shutdown_sample_button(void) {
+#ifdef HW_SAMPLE_SHUTDOWN_OVR
+	return HW_SAMPLE_SHUTDOWN_OVR();
+#else
+	if (!m_init_done) {
+		return false;
+	}
+
+	chMtxLock(&m_sample_mutex);
+	if (m_sampling_disabled) {
+		chMtxUnlock(&m_sample_mutex);
+		return false;
+	}
+
+	bool sample = false;
+	if (!m_sampling_disabled) {
+		sample = HW_SAMPLE_SHUTDOWN();
+	}
+	chMtxUnlock(&m_sample_mutex);
+
+	return sample;
+#endif
 }
 
 void shutdown_save_and_hold(void) {
@@ -265,6 +294,10 @@ float shutdown_get_inactivity_time(void) {
 
 void shutdown_hold(bool hold) {
 	(void)hold;
+}
+
+bool shutdown_sample_button(void) {
+	return false;
 }
 
 bool do_shutdown(bool resample) {
