@@ -1745,12 +1745,16 @@ void mc_interface_ignore_input_both(int time_ms) {
 }
 
 void mc_interface_release_motor_override_both(void) {
+#ifdef HW_HAS_DUAL_MOTORS
 	int motor_last = mc_interface_get_motor_thread();
 	mc_interface_select_motor_thread(1);
 	mc_interface_release_motor_override();
 	mc_interface_select_motor_thread(2);
 	mc_interface_release_motor_override();
 	mc_interface_select_motor_thread(motor_last);
+#else
+	mc_interface_release_motor_override();
+#endif
 }
 
 bool mc_interface_wait_for_motor_release_both(float timeout) {
@@ -2576,14 +2580,17 @@ static void run_timer_tasks(volatile motor_if_state_t *motor) {
 		m_motor_1.m_runtime_last = runtime;
 	}
 
+	utils_sys_lock_cnt();
 	// Decrease fault iterations
 	if (motor->m_ignore_iterations > 0) {
 		motor->m_ignore_iterations--;
-	} else {
+	}
+	if (motor->m_ignore_iterations == 0) {
 		if (!(is_motor_1 ? IS_DRV_FAULT() : IS_DRV_FAULT_2())) {
 			motor->m_fault_now = FAULT_CODE_NONE;
 		}
 	}
+	utils_sys_unlock_cnt();
 
 	if (is_motor_1 ? IS_DRV_FAULT() : IS_DRV_FAULT_2()) {
 		motor->m_drv_fault_iterations++;
