@@ -22,6 +22,7 @@
 #include "stm32f4xx_conf.h"
 #include "shutdown.h"
 #include "utils.h"
+#include "main.h"
 
 // Private variables
 static volatile bool init_done = false;
@@ -178,15 +179,9 @@ void timeout_configure_IWDT(void) {
 }
 
 bool timeout_had_IWDG_reset(void) {
-	// Check if the system has resumed from IWDG reset
-	if (RCC_GetFlagStatus(RCC_FLAG_IWDGRST) != RESET) {
-		/* IWDGRST flag set */
-		/* Clear reset flags */
-		RCC_ClearFlag();
-		return true;
-	}
-
-	return false;
+	// The live RCC_CSR flags are captured and cleared at the start of main(),
+	// check the stored snapshot.
+	return (crash_info.reset_flags & RCC_CSR_WDGRSTF) != 0;
 }
 
 static THD_FUNCTION(timeout_thread, arg) {
@@ -212,6 +207,30 @@ static THD_FUNCTION(timeout_thread, arg) {
 
 		case KILL_SW_MODE_ADC2_HIGH:
 			kill_sw = ADC_VOLTS(ADC_IND_EXT2) > 1.65;
+			break;
+
+		case KILL_SW_MODE_ADC3_LOW:
+			kill_sw = ADC_VOLTS(ADC_IND_EXT3) < 1.65;
+			break;
+
+		case KILL_SW_MODE_ADC3_HIGH:
+			kill_sw = ADC_VOLTS(ADC_IND_EXT3) > 1.65;
+			break;
+
+		case KILL_SW_MODE_SWDIO_LOW:
+			kill_sw = !palReadPad(GPIOA, 13);
+			break;
+
+		case KILL_SW_MODE_SWDIO_HIGH:
+			kill_sw = palReadPad(GPIOA, 13);
+			break;
+
+		case KILL_SW_MODE_SWCLK_LOW:
+			kill_sw = !palReadPad(GPIOA, 14);
+			break;
+
+		case KILL_SW_MODE_SWCLK_HIGH:
+			kill_sw = palReadPad(GPIOA, 14);
 			break;
 
 		default:
@@ -242,6 +261,14 @@ static THD_FUNCTION(timeout_thread, arg) {
 		}
 
 		kill_sw_active = kill_sw;
+
+		// Re-arm the PVD supply dip latch (its ISR masks the line to rate-limit a
+		// bouncing supply to one latched dip per iteration). Locked because IMR is
+		// also read-modified-written by EXTI_Init calls from other threads.
+		chSysLock();
+		EXTI->IMR |= EXTI_Line16;
+		chSysUnlock();
+
 
 		bool threads_ok = true;
 
